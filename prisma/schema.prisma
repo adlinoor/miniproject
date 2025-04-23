@@ -14,50 +14,128 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-enum UserRole {
-  organizer
-  customer
+model User {
+  id                Int         @id @default(autoincrement())
+  first_name        String
+  last_name         String
+  email             String      @unique
+  password          String
+  role              Role        @default(customer)
+  referralCode      String?     @unique
+  referredBy        String?
+  userPoints        Int         @default(0)
+  profilePicture    String?
+  points            Point[]     // Relation to Point model
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  events            Event[]
+  transactions      Transaction[]
+  reviews           Review[]
+  coupons           Coupon[]
+
+  @@index([email]) // Index for faster queries by email
+  @@index([referralCode]) // Index for faster queries by referral code
 }
 
-model User {
-  id             Int           @id @default(autoincrement())
-  firstName      String        @map("first_name")
-  lastName       String        @map("last_name")
-  role           UserRole
-  profilePicture String?       @map("profile_picture")
-  password       String
-  email          String        @unique
-  referralCode   String?       @unique @map("referral_code")
-  userPoints     Int           @default(0) @map("user_points")
-  expiryPoints   DateTime?     @map("expiry_points")
-  events         Event[]
-  transactions   Transaction[]
-  reviews        Review[]
-  referredBy     Referral?     @relation("referredBy")
-  referredUsers  Referral[]    @relation("referredUsers")
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
+enum Role {
+  customer
+  organizer
+}
+
+model Point {
+  id          Int         @id @default(autoincrement())
+  userId      Int
+  user        User         @relation(fields: [userId], references: [id])
+  amount      Int
+  expiresAt   DateTime
+  createdAt   DateTime     @default(now())
+
+  @@index([userId]) // Index for faster queries by userId
 }
 
 model Event {
-  id             Int           @id @default(autoincrement())
-  name           String
-  location       String
-  startDate      DateTime      @map("start_date")
-  endDate        DateTime      @map("end_date")
-  seats          Int
-  availableSeats Int           @map("available_seats")
-  organizer      User          @relation(fields: [organizerId], references: [id])
-  organizerId    Int           @map("organizer_id")
-  price          Float
-  description    String?
-  isOnline       Boolean       @default(false) @map("is_online")
-  category       String?
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
-  transactions   Transaction[]
-  discounts      Discount[]
-  reviews        Review[]
+  id              Int         @id @default(autoincrement())
+  title           String
+  description     String
+  startDate       DateTime
+  endDate         DateTime
+  location        String
+  category        String
+  price           Int
+  availableSeats  Int
+  images          Image[]
+  organizerId     Int
+  organizer       User         @relation(fields: [organizerId], references: [id])
+  tickets         Ticket[]
+  promotions      Promotion[]
+  transactions    Transaction[]
+  reviews         Review[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([organizerId]) // Index for faster queries by organizer
+  @@index([category]) // Index for faster queries by category
+  @@index([location]) // Index for faster queries by location
+}
+
+model Image {
+  id        Int      @id @default(autoincrement())
+  url       String
+  eventId   Int
+  event     Event    @relation(fields: [eventId], references: [id])
+}
+
+model Ticket {
+  id         Int         @id @default(autoincrement())
+  eventId    Int
+  event      Event        @relation(fields: [eventId], references: [id])
+  type       String
+  price      Int
+  quantity   Int
+  createdAt  DateTime     @default(now())
+}
+
+model Promotion {
+  id          String   @id @default(uuid())
+  eventId     Int
+  event       Event    @relation(fields: [eventId], references: [id])
+  code        String   @unique
+  discount    Int
+  startDate   DateTime
+  endDate     DateTime
+  maxUses     Int?
+  uses        Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model Coupon {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  discount    Int
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  expiresAt   DateTime
+  isUsed      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model Transaction {
+  id              Int         @id @default(autoincrement())
+  eventId         Int
+  event           Event        @relation(fields: [eventId], references: [id])
+  userId          Int
+  user            User         @relation(fields: [userId], references: [id])
+  quantity        Int
+  totalPrice      Int
+  status          TransactionStatus @default(waiting_for_payment)
+  paymentProof    String?
+  voucherCode     String?
+  pointsUsed      Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  expiresAt       DateTime
+
+  @@index([userId, eventId]) // Composite index for faster queries
 }
 
 enum TransactionStatus {
@@ -68,66 +146,15 @@ enum TransactionStatus {
   expired
   canceled
 }
-
-model Transaction {
-  id             Int               @id @default(autoincrement())
-  status         TransactionStatus
-  paymentDate    DateTime?         @map("payment_date")
-  user           User              @relation(fields: [userId], references: [id])
-  userId         Int               @map("user_id")
-  event          Event             @relation(fields: [eventId], references: [id])
-  eventId        Int               @map("event_id")
-  totalAmount    Float             @map("total_amount")
-  paymentMethod  String?           @map("payment_method")
-  ticketQuantity Int               @default(1) @map("ticket_quantity")
-  paymentProof   String?           @map("payment_proof")
-  expiredAt      DateTime?         @map("expired_at")
-  confirmedAt    DateTime?         @map("confirmed_at")
-  createdAt      DateTime          @default(now()) @map("created_at")
-  updatedAt      DateTime          @updatedAt @map("updated_at")
-}
-
-model Discount {
-  id               Int      @id @default(autoincrement())
-  code             String   @unique
-  name             String
-  discountValue    Float    @map("discount_value")
-  expiryDate       DateTime @map("expiry_date")
-  maxUses          Int?     @map("max_uses")
-  usedCount        Int      @default(0) @map("used_count")
-  event            Event?   @relation(fields: [eventId], references: [id])
-  eventId          Int?     @map("event_id")
-  isReferralReward Boolean  @default(false) @map("is_referral_reward")
-  createdAt        DateTime @default(now()) @map("created_at")
-
-  Referral Referral[]
-}
-
 model Review {
-  id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int      @map("user_id")
-  event     Event    @relation(fields: [eventId], references: [id])
-  eventId   Int      @map("event_id")
-  message   String?
-  rating    Int
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id          Int         @id @default(autoincrement())
+  eventId     Int
+  event       Event        @relation(fields: [eventId], references: [id])
+  userId      Int
+  user        User         @relation(fields: [userId], references: [id])
+  rating      Int
+  comment     String?
+  createdAt   DateTime     @default(now())
 
-  @@unique([userId, eventId])
-}
-
-model Referral {
-  id            Int       @id @default(autoincrement())
-  referrer      User      @relation(fields: [referrerId], references: [id], name: "referredBy")
-  referrerId    Int       @unique @map("referrer_id")
-  referee       User      @relation(fields: [refereeId], references: [id], name: "referredUsers")
-  refereeId     Int       @unique @map("referee_id")
-  referralCode  String    @map("referral_code")
-  status        String    @default("pending")
-  pointsAwarded Int       @default(10000) @map("points_awarded")
-  discount      Discount? @relation(fields: [discountId], references: [id])
-  discountId    Int?      @map("discount_id")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  completedAt   DateTime? @map("completed_at")
+  @@unique([userId, eventId]) // Prevent duplicate reviews for the same user-event pair
 }
