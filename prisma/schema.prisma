@@ -20,44 +20,44 @@ enum UserRole {
 }
 
 model User {
-  id               Int       @id @default(autoincrement())
-  firstName        String    @map("first_name")
-  lastName         String    @map("last_name")
-  role             UserRole
-  profilePicture   String?   @map("profile_picture")
-  password         String
-  email            String    @unique
-  referralCode     String?   @unique @map("referral_code")
-  userPoints       Int       @default(0) @map("user_points")
-  expiryPoints     DateTime? @map("expiry_points")
-  events           Event[]
-  transactions     Transaction[]
-  reviews          Review[]
-  referredBy       Referral? @relation("referredBy")
-  referredUsers    Referral[] @relation("referredUsers")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  id             Int           @id @default(autoincrement())
+  firstName      String        @map("first_name")
+  lastName       String        @map("last_name")
+  role           UserRole
+  profilePicture String?       @map("profile_picture")
+  password       String
+  email          String        @unique
+  referralCode   String?       @unique @map("referral_code")
+  userPoints     Int           @default(0) @map("user_points")
+  expiryPoints   DateTime?     @map("expiry_points")
+  events         Event[]
+  transactions   Transaction[]
+  reviews        Review[]
+  referredBy     Referral?     @relation("referredBy")
+  referredUsers  Referral[]    @relation("referredUsers")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
 }
 
 model Event {
-  id               Int       @id @default(autoincrement())
-  name             String
-  location         String
-  startDate        DateTime  @map("start_date")
-  endDate          DateTime  @map("end_date")
-  seats            Int
-  availableSeats   Int       @map("available_seats")
-  organizer        User      @relation(fields: [organizerId], references: [id])
-  organizerId      Int       @map("organizer_id")
-  price            Float
-  description      String?
-  isOnline         Boolean   @default(false) @map("is_online")
-  category         String?
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
-  transactions     Transaction[]
-  discounts        Discount[]
-  reviews          Review[]
+  id             Int           @id @default(autoincrement())
+  name           String
+  location       String
+  startDate      DateTime      @map("start_date")
+  endDate        DateTime      @map("end_date")
+  seats          Int
+  availableSeats Int           @map("available_seats")
+  organizer      User          @relation(fields: [organizerId], references: [id])
+  organizerId    Int           @map("organizer_id")
+  price          Float
+  description    String?
+  isOnline       Boolean       @default(false) @map("is_online")
+  category       String?
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  transactions   Transaction[]
+  discounts      Discount[]
+  reviews        Review[]
 }
 
 enum TransactionStatus {
@@ -70,64 +70,64 @@ enum TransactionStatus {
 }
 
 model Transaction {
-  id               Int       @id @default(autoincrement())
-  status           TransactionStatus
-  paymentDate      DateTime? @map("payment_date")
-  user             User      @relation(fields: [userId], references: [id])
-  userId           Int       @map("user_id")
-  event            Event     @relation(fields: [eventId], references: [id])
-  eventId          Int       @map("event_id")
-  totalAmount      Float     @map("total_amount")
-  paymentMethod    String?   @map("payment_method")
-  ticketQuantity   Int       @default(1) @map("ticket_quantity")
-  paymentProof     String?   @map("payment_proof")
-  expiredAt        DateTime? @map("expired_at")
-  confirmedAt      DateTime? @map("confirmed_at")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  id             Int               @id @default(autoincrement())
+  status         TransactionStatus
+  paymentDate    DateTime?         @map("payment_date")
+  user           User              @relation(fields: [userId], references: [id])
+  userId         Int               @map("user_id")
+  event          Event             @relation(fields: [eventId], references: [id])
+  eventId        Int               @map("event_id")
+  totalAmount    Float             @map("total_amount")
+  paymentMethod  String?           @map("payment_method")
+  ticketQuantity Int               @default(1) @map("ticket_quantity")
+  paymentProof   String?           @map("payment_proof")
+  expiredAt      DateTime?         @map("expired_at")
+  confirmedAt    DateTime?         @map("confirmed_at")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
 }
 
 model Discount {
-  id               Int       @id @default(autoincrement())
-  code             String    @unique
+  id               Int      @id @default(autoincrement())
+  code             String   @unique
   name             String
-  discountValue    Float     @map("discount_value")
-  expiryDate       DateTime  @map("expiry_date")
-  maxUses          Int?      @map("max_uses")
-  usedCount        Int       @default(0) @map("used_count")
-  event            Event?    @relation(fields: [eventId], references: [id])
-  eventId          Int?      @map("event_id")
-  isReferralReward Boolean   @default(false) @map("is_referral_reward")
-  createdAt        DateTime  @default(now()) @map("created_at")
+  discountValue    Float    @map("discount_value")
+  expiryDate       DateTime @map("expiry_date")
+  maxUses          Int?     @map("max_uses")
+  usedCount        Int      @default(0) @map("used_count")
+  event            Event?   @relation(fields: [eventId], references: [id])
+  eventId          Int?     @map("event_id")
+  isReferralReward Boolean  @default(false) @map("is_referral_reward")
+  createdAt        DateTime @default(now()) @map("created_at")
 
   Referral Referral[]
 }
 
 model Review {
-  id               Int       @id @default(autoincrement())
-  user             User      @relation(fields: [userId], references: [id])
-  userId           Int       @map("user_id")
-  event            Event     @relation(fields: [eventId], references: [id])
-  eventId          Int       @map("event_id")
-  message          String?
-  rating           Int
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int      @map("user_id")
+  event     Event    @relation(fields: [eventId], references: [id])
+  eventId   Int      @map("event_id")
+  message   String?
+  rating    Int
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([userId, eventId])
 }
 
 model Referral {
-  id               Int       @id @default(autoincrement())
-  referrer         User      @relation(fields: [referrerId], references: [id], name: "referredBy")
-  referrerId       Int       @map("referrer_id") @unique
-  referee          User      @relation(fields: [refereeId], references: [id], name: "referredUsers")
-  refereeId        Int       @map("referee_id") @unique
-  referralCode     String    @map("referral_code")
-  status           String    @default("pending")
-  pointsAwarded    Int       @default(10000) @map("points_awarded")
-  discount         Discount? @relation(fields: [discountId], references: [id])
-  discountId       Int?      @map("discount_id")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  completedAt      DateTime? @map("completed_at")
+  id            Int       @id @default(autoincrement())
+  referrer      User      @relation(fields: [referrerId], references: [id], name: "referredBy")
+  referrerId    Int       @unique @map("referrer_id")
+  referee       User      @relation(fields: [refereeId], references: [id], name: "referredUsers")
+  refereeId     Int       @unique @map("referee_id")
+  referralCode  String    @map("referral_code")
+  status        String    @default("pending")
+  pointsAwarded Int       @default(10000) @map("points_awarded")
+  discount      Discount? @relation(fields: [discountId], references: [id])
+  discountId    Int?      @map("discount_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  completedAt   DateTime? @map("completed_at")
 }
