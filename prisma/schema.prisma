@@ -25,6 +25,7 @@ model User {
   referredBy        String?
   userPoints        Int         @default(0)
   profilePicture    String?
+  isVerified        Boolean     @default(false) // Added isVerified field
   points            Point[]     // Relation to Point model
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
@@ -148,6 +149,7 @@ enum TransactionStatus {
   expired
   canceled
 }
+
 model Review {
   id          Int         @id @default(autoincrement())
   eventId     Int

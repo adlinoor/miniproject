@@ -26,3 +26,5 @@ export function Multer(
     limits: { fileSize: 1024 * 1024 }, // 1MB limit
   });
 }
+
+export const upload = multer({ storage: multer.memoryStorage() });

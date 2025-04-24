@@ -1,39 +1,45 @@
-import { prisma } from "../app";
-import { z } from "zod";
-import { TransactionStatus } from "@prisma/client";
-import { sendEmail } from "./email.service";
-import { uploadToCloudinary } from "./cloudinary.service";
+import prisma from "../lib/prisma"; // Import Prisma Client
+import { z } from "zod"; // For validation
+import { TransactionStatus } from "@prisma/client"; // Prisma Enum for Transaction Status
+import { sendEmail } from "./email.service"; // Email service for notifications
+import { uploadToCloudinary } from "./cloudinary.service"; // Cloudinary service for file uploads
 
 // Zod validation schemas
 export const createTransactionSchema = z.object({
-  eventId: z.string(),
-  ticketId: z.string(),
+  eventId: z.string(), // Expecting string from input, will convert to number
+  ticketId: z.string(), // Expecting string from input, will convert to number
   quantity: z.number().min(1),
   voucherCode: z.string().optional(),
   usePoints: z.boolean().optional(),
 });
 
+// Create a new transaction
 export const createTransaction = async (
   data: z.infer<typeof createTransactionSchema>,
-  userId: string
+  userId: number // Ensure userId is a number to match Prisma schema
 ) => {
   const { eventId, ticketId, quantity, voucherCode, usePoints } = data;
 
-  // Get event and ticket
-  const event = await prisma.event.findUnique({ where: { id: eventId } });
-  if (!event) {
-    throw new Error("Event not found");
+  // Convert string IDs to numbers
+  const eventIdNumber = parseInt(eventId, 10);
+  const ticketIdNumber = parseInt(ticketId, 10);
+
+  if (isNaN(eventIdNumber) || isNaN(ticketIdNumber)) {
+    throw new Error("Invalid eventId or ticketId");
   }
 
-  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
-  if (!ticket || ticket.eventId !== eventId) {
+  // Fetch event and ticket details
+  const event = await prisma.event.findUnique({ where: { id: eventIdNumber } });
+  if (!event) throw new Error("Event not found");
+
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketIdNumber },
+  });
+  if (!ticket || ticket.eventId !== eventIdNumber)
     throw new Error("Ticket not found");
-  }
 
-  // Check available seats
-  if (ticket.quantity < quantity) {
-    throw new Error("Not enough available seats");
-  }
+  // Check ticket availability
+  if (ticket.quantity < quantity) throw new Error("Not enough available seats");
 
   // Calculate total price
   let totalPrice = ticket.price * quantity;
@@ -46,17 +52,12 @@ export const createTransaction = async (
       where: { code: voucherCode },
     });
 
-    if (!voucher || voucher.eventId !== eventId) {
+    if (!voucher || voucher.eventId !== eventIdNumber)
       throw new Error("Invalid voucher code");
-    }
-
-    if (voucher.startDate > new Date() || voucher.endDate < new Date()) {
+    if (voucher.startDate > new Date() || voucher.endDate < new Date())
       throw new Error("Voucher is not valid at this time");
-    }
-
-    if (voucher.maxUses && voucher.uses >= voucher.maxUses) {
+    if (voucher.maxUses && voucher.uses >= voucher.maxUses)
       throw new Error("Voucher has reached its usage limit");
-    }
 
     discount = voucher.discount;
     totalPrice = totalPrice * (1 - discount / 100);
@@ -65,10 +66,7 @@ export const createTransaction = async (
   // Apply points if requested
   if (usePoints) {
     const userPoints = await prisma.point.findMany({
-      where: {
-        userId,
-        expiresAt: { gt: new Date() },
-      },
+      where: { userId, expiresAt: { gt: new Date() } },
       orderBy: { expiresAt: "asc" }, // Use oldest points first
     });
 
@@ -81,8 +79,6 @@ export const createTransaction = async (
     if (maxPointsToUse > 0) {
       pointsUsed = maxPointsToUse;
       totalPrice -= pointsUsed;
-
-      // Mark points as used (we'll actually deduct them when transaction is confirmed)
     }
   }
 
@@ -93,11 +89,11 @@ export const createTransaction = async (
   // Create transaction
   const transaction = await prisma.transaction.create({
     data: {
-      eventId,
+      eventId: eventIdNumber,
       userId,
       quantity,
       totalPrice: Math.max(0, totalPrice), // Ensure price doesn't go negative
-      status: "WAITING_PAYMENT",
+      status: TransactionStatus.waiting_for_payment, // Use camelCase enum value
       expiresAt,
       voucherCode,
       pointsUsed,
@@ -106,44 +102,38 @@ export const createTransaction = async (
 
   // Update ticket quantity
   await prisma.ticket.update({
-    where: { id: ticketId },
-    data: {
-      quantity: ticket.quantity - quantity,
-    },
+    where: { id: ticketIdNumber },
+    data: { quantity: ticket.quantity - quantity },
   });
 
   return transaction;
 };
 
+// Upload payment proof
 export const uploadPaymentProof = async (
-  transactionId: string,
-  userId: string,
+  transactionId: number, // Ensure transactionId is a number
+  userId: number, // Ensure userId is a number
   file: Express.Multer.File
 ) => {
-  // Verify transaction belongs to user
   const transaction = await prisma.transaction.findUnique({
     where: { id: transactionId },
   });
 
-  if (!transaction || transaction.userId !== userId) {
+  if (!transaction || transaction.userId !== userId)
     throw new Error("Transaction not found");
-  }
 
-  if (transaction.status !== "WAITING_PAYMENT") {
+  if (transaction.status !== TransactionStatus.waiting_for_payment)
     throw new Error(
       "Payment proof can only be uploaded for waiting payment transactions"
     );
-  }
 
-  // Upload proof to Cloudinary
   const proofUrl = await uploadToCloudinary(file);
 
-  // Update transaction
   const updatedTransaction = await prisma.transaction.update({
     where: { id: transactionId },
     data: {
       paymentProof: proofUrl,
-      status: "WAITING_CONFIRMATION",
+      status: TransactionStatus.waiting_for_admin_confirmation, // Use camelCase enum value
       expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // New expiration in 3 days
     },
   });
@@ -151,57 +141,45 @@ export const uploadPaymentProof = async (
   return updatedTransaction;
 };
 
+// Confirm or reject a transaction
 export const confirmTransaction = async (
-  transactionId: string,
-  organizerId: string,
+  transactionId: number, // Ensure transactionId is a number
+  organizerId: number, // Ensure organizerId is a number
   accept: boolean
 ) => {
-  // Verify transaction belongs to organizer's event
   const transaction = await prisma.transaction.findUnique({
     where: { id: transactionId },
     include: { event: true },
   });
 
-  if (!transaction || transaction.event.organizerId !== organizerId) {
+  if (!transaction || transaction.event.organizerId !== organizerId)
     throw new Error("Transaction not found");
-  }
 
-  if (transaction.status !== "WAITING_CONFIRMATION") {
+  if (transaction.status !== TransactionStatus.waiting_for_admin_confirmation)
     throw new Error("Only waiting confirmation transactions can be confirmed");
-  }
 
   let updatedTransaction;
 
   if (accept) {
-    // Mark transaction as done
     updatedTransaction = await prisma.transaction.update({
       where: { id: transactionId },
-      data: {
-        status: "DONE",
-      },
+      data: { status: TransactionStatus.done }, // Use camelCase enum value
     });
 
-    // Mark voucher as used if applicable
     if (transaction.voucherCode) {
       await prisma.promotion.update({
         where: { code: transaction.voucherCode },
-        data: {
-          uses: { increment: 1 },
-        },
+        data: { uses: { increment: 1 } },
       });
     }
 
-    // Deduct points if used
     if (transaction.pointsUsed > 0) {
       await deductPoints(transaction.userId, transaction.pointsUsed);
     }
 
-    // Send confirmation email
     await sendConfirmationEmail(transactionId, true);
   } else {
-    // Reject transaction and restore seats
     await prisma.$transaction(async (prisma) => {
-      // Restore ticket quantity
       const ticket = await prisma.ticket.findFirst({
         where: { eventId: transaction.eventId },
       });
@@ -209,126 +187,30 @@ export const confirmTransaction = async (
       if (ticket) {
         await prisma.ticket.update({
           where: { id: ticket.id },
-          data: {
-            quantity: { increment: transaction.quantity },
-          },
+          data: { quantity: { increment: transaction.quantity } },
         });
       }
 
-      // Update transaction status
       updatedTransaction = await prisma.transaction.update({
         where: { id: transactionId },
-        data: {
-          status: "REJECTED",
-        },
+        data: { status: TransactionStatus.rejected }, // Use camelCase enum value
       });
 
-      // Return points if used
       if (transaction.pointsUsed > 0) {
         await returnPoints(transaction.userId, transaction.pointsUsed);
       }
     });
 
-    // Send rejection email
     await sendConfirmationEmail(transactionId, false);
   }
 
   return updatedTransaction;
 };
 
-export const checkExpiredTransactions = async () => {
-  const now = new Date();
-
-  // Find expired waiting payment transactions
-  const expiredWaitingPayment = await prisma.transaction.findMany({
-    where: {
-      status: "WAITING_PAYMENT",
-      expiresAt: { lte: now },
-    },
-    include: {
-      event: {
-        include: {
-          tickets: true,
-        },
-      },
-    },
-  });
-
-  // Process each expired transaction
-  for (const transaction of expiredWaitingPayment) {
-    await prisma.$transaction(async (prisma) => {
-      // Restore ticket quantity
-      const ticket = transaction.event.tickets[0]; // Simplified - in real app you'd need to find the correct ticket
-      if (ticket) {
-        await prisma.ticket.update({
-          where: { id: ticket.id },
-          data: {
-            quantity: { increment: transaction.quantity },
-          },
-        });
-      }
-
-      // Update transaction status
-      await prisma.transaction.update({
-        where: { id: transaction.id },
-        data: {
-          status: "EXPIRED",
-        },
-      });
-    });
-  }
-
-  // Find expired waiting confirmation transactions
-  const expiredWaitingConfirmation = await prisma.transaction.findMany({
-    where: {
-      status: "WAITING_CONFIRMATION",
-      expiresAt: { lte: now },
-    },
-    include: {
-      event: {
-        include: {
-          tickets: true,
-        },
-      },
-    },
-  });
-
-  // Process each expired confirmation
-  for (const transaction of expiredWaitingConfirmation) {
-    await prisma.$transaction(async (prisma) => {
-      // Restore ticket quantity
-      const ticket = transaction.event.tickets[0]; // Simplified
-      if (ticket) {
-        await prisma.ticket.update({
-          where: { id: ticket.id },
-          data: {
-            quantity: { increment: transaction.quantity },
-          },
-        });
-      }
-
-      // Return points if used
-      if (transaction.pointsUsed > 0) {
-        await returnPoints(transaction.userId, transaction.pointsUsed);
-      }
-
-      // Update transaction status
-      await prisma.transaction.update({
-        where: { id: transaction.id },
-        data: {
-          status: "CANCELED",
-        },
-      });
-    });
-  }
-};
-
-const deductPoints = async (userId: string, amount: number) => {
+// Deduct points from a user
+const deductPoints = async (userId: number, amount: number) => {
   const userPoints = await prisma.point.findMany({
-    where: {
-      userId,
-      expiresAt: { gt: new Date() },
-    },
+    where: { userId, expiresAt: { gt: new Date() } },
     orderBy: { expiresAt: "asc" },
   });
 
@@ -339,40 +221,31 @@ const deductPoints = async (userId: string, amount: number) => {
     const deductAmount = Math.min(point.amount, remaining);
     await prisma.point.update({
       where: { id: point.id },
-      data: {
-        amount: { decrement: deductAmount },
-      },
+      data: { amount: { decrement: deductAmount } },
     });
 
     remaining -= deductAmount;
   }
 };
 
-const returnPoints = async (userId: string, amount: number) => {
-  // Find active points record or create new one
-  const now = new Date();
+// Return points to a user
+const returnPoints = async (userId: number, amount: number) => {
   const expirationDate = new Date();
-  expirationDate.setMonth(now.getMonth() + 3); // Expires in 3 months
+  expirationDate.setMonth(expirationDate.getMonth() + 3);
 
   await prisma.point.create({
-    data: {
-      userId,
-      amount,
-      expiresAt: expirationDate,
-    },
+    data: { userId, amount, expiresAt: expirationDate },
   });
 };
 
+// Send confirmation email
 const sendConfirmationEmail = async (
-  transactionId: string,
+  transactionId: number,
   accepted: boolean
 ) => {
   const transaction = await prisma.transaction.findUnique({
     where: { id: transactionId },
-    include: {
-      event: true,
-      user: true,
-    },
+    include: { event: true, user: true },
   });
 
   if (!transaction) return;

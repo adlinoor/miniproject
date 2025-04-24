@@ -11,8 +11,7 @@ import { v2 as cloudinary } from "cloudinary";
 import authRoutes from "./routers/auth.routers";
 import eventRoutes from "./routers/event.routers";
 import transactionRoutes from "./routers/transaction.routers";
-import { userRoutes } from "./routers/user.routers";
-import adminRoutes from "./routers/admin.routers";
+import route from "./routers/user.routers";
 
 dotenv.config();
 
