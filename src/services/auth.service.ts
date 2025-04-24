@@ -12,12 +12,17 @@ import fs from "fs";
 import { SECRET_KEY } from "../config";
 import { z } from "zod";
 
-const RegisterSchema = z.object({
+export const RegisterSchema = z.object({
   first_name: z.string(),
   last_name: z.string(),
   email: z.string().email(),
   password: z.string().min(6),
   role: z.enum(["customer", "organizer"]),
+});
+
+export const LoginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
 });
 
 async function GetAll() {
@@ -32,9 +37,9 @@ async function FindUserByEmail(email: string) {
   try {
     const user = await prisma.user.findFirst({
       select: {
+        first_name: true,
+        last_name: true,
         email: true,
-        first_name: true, // Changed to match the Prisma schema
-        last_name: true, // Changed to match the Prisma schema
         password: true,
         role: true,
       },

@@ -1,6 +1,6 @@
 import express from "express";
-import { upload } from "../app";
-import { authenticate, authorizeRoles } from "../middleware/auth";
+import { upload } from "../";
+import { authorizeRoles } from "../middleware/auth.middleware";
 import { Role } from "@prisma/client";
 import {
   createEvent,
@@ -8,7 +8,7 @@ import {
   getEventById,
   createEventSchema,
 } from "../services/event.service";
-import { validateRequest } from "../middleware/validateRequest";
+import ReqValidator from "../middleware/validator.middleware";
 
 const router = express.Router();
 
@@ -35,9 +35,9 @@ router.get("/:id", async (req, res, next) => {
 router.post(
   "/",
   authenticate,
-  authorizeRoles([Role.ORGANIZER]),
+  authorizeRoles([Role.organizer]),
   upload.array("images", 5),
-  validateRequest(createEventSchema),
+  ReqValidator(createEventSchema),
   async (req, res, next) => {
     try {
       const event = await createEvent(

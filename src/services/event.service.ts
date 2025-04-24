@@ -1,4 +1,5 @@
-import { prisma } from "../app";
+import prisma from "../lib/prisma"; // Ensure correct import path
+import { Prisma } from "@prisma/client"; // Import Prisma types
 import { z } from "zod";
 import { uploadToCloudinary } from "./cloudinary.service";
 
@@ -37,26 +38,71 @@ export const createEvent = async (
   );
 
   // Create event with transaction to ensure data consistency
-  const event = await prisma.$transaction(async (prisma) => {
-    const createdEvent = await prisma.event.create({
-      data: {
-        ...eventData,
-        organizerId,
-        images: imageUrls,
-      },
-    });
+  type EventWithTickets = Prisma.EventGetPayload<{
+    include: { tickets: true };
+  }>;
 
-    if (ticketTypes && ticketTypes.length > 0) {
-      await prisma.ticket.createMany({
-        data: ticketTypes.map((ticket) => ({
-          eventId: createdEvent.id,
-          ...ticket,
-        })),
+  const event = await prisma.$transaction(
+    async (prisma: {
+      event: {
+        create: (arg0: {
+          data: {
+            organizerId: number;
+            images: { create: { url: string }[] };
+            title: string;
+            description: string;
+            startDate: string;
+            endDate: string;
+            location: string;
+            category: string;
+            price: number;
+            availableSeats: number;
+            isFree: boolean;
+          };
+        }) => any;
+        findUnique: (arg0: {
+          where: { id: any };
+          include: { tickets: boolean };
+        }) => any;
+      };
+      ticket: {
+        createMany: (arg0: {
+          data: {
+            price: number;
+            type: string;
+            quantity: number;
+            eventId: any;
+          }[];
+        }) => any;
+      };
+    }): Promise<EventWithTickets> => {
+      const createdEvent = await prisma.event.create({
+        data: {
+          ...eventData,
+          organizerId: parseInt(organizerId, 10),
+          images: {
+            create: imageUrls.map((url) => ({ url })),
+          },
+        },
       });
-    }
 
-    return createdEvent;
-  });
+      if (ticketTypes && ticketTypes.length > 0) {
+        await prisma.ticket.createMany({
+          data: ticketTypes.map((ticket) => ({
+            eventId: createdEvent.id,
+            ...ticket,
+          })),
+        });
+      }
+
+      const eventWithTickets = await prisma.event.findUnique({
+        where: { id: createdEvent.id },
+        include: { tickets: true },
+      });
+
+      return eventWithTickets!;
+    }
+  );
 
   return event;
 };
@@ -73,17 +119,25 @@ export const getEvents = async (filters: {
   const { category, location, search, minPrice, maxPrice, dateFrom, dateTo } =
     filters;
 
-  const where: any = {
+  const where: Prisma.EventWhereInput = {
     startDate: { gte: new Date() }, // Only upcoming events
   };
 
   if (category) where.category = { contains: category, mode: "insensitive" };
   if (location) where.location = { contains: location, mode: "insensitive" };
   if (minPrice !== undefined) where.price = { gte: minPrice };
-  if (maxPrice !== undefined) where.price = { ...where.price, lte: maxPrice };
+  if (maxPrice !== undefined)
+    where.price = { ...((where.price as object) ?? {}), lte: maxPrice };
   if (dateFrom)
-    where.startDate = { ...where.startDate, gte: new Date(dateFrom) };
-  if (dateTo) where.startDate = { ...where.startDate, lte: new Date(dateTo) };
+    where.startDate = {
+      ...((where.startDate as object) || {}),
+      gte: new Date(dateFrom),
+    };
+  if (dateTo)
+    where.startDate = {
+      ...((where.startDate as object) || {}),
+      lte: new Date(dateTo),
+    };
 
   if (search) {
     where.OR = [
@@ -100,7 +154,6 @@ export const getEvents = async (filters: {
       organizer: {
         select: {
           id: true,
-          name: true,
           profilePicture: true,
         },
       },
@@ -109,7 +162,14 @@ export const getEvents = async (filters: {
         where: {
           startDate: { lte: new Date() },
           endDate: { gte: new Date() },
-          OR: [{ maxUses: null }, { maxUses: { gt: { $field: "uses" } } }],
+          OR: [
+            { maxUses: null },
+            {
+              maxUses: {
+                gt: await prisma.promotion.count({}),
+              },
+            },
+          ],
         },
       },
       _count: {
@@ -128,12 +188,11 @@ export const getEvents = async (filters: {
 
 export const getEventById = async (id: string) => {
   const event = await prisma.event.findUnique({
-    where: { id },
+    where: { id: parseInt(id, 10) },
     include: {
       organizer: {
         select: {
           id: true,
-          name: true,
           profilePicture: true,
         },
       },
@@ -142,7 +201,10 @@ export const getEventById = async (id: string) => {
         where: {
           startDate: { lte: new Date() },
           endDate: { gte: new Date() },
-          OR: [{ maxUses: null }, { maxUses: { gt: { $field: "uses" } } }],
+          OR: [
+            { maxUses: null },
+            { maxUses: { gt: await prisma.promotion.count({}) } },
+          ],
         },
       },
       reviews: {
@@ -150,7 +212,6 @@ export const getEventById = async (id: string) => {
           user: {
             select: {
               id: true,
-              name: true,
               profilePicture: true,
             },
           },
@@ -164,9 +225,13 @@ export const getEventById = async (id: string) => {
   }
 
   // Calculate average rating
-  const avgRating =
-    event.reviews.reduce((acc, review) => acc + review.rating, 0) /
-      event.reviews.length || 0;
+  const avgRating: number =
+    event.reviews && event.reviews.length > 0
+      ? event.reviews!.reduce(
+          (acc: number, review: { rating: number }) => acc + review.rating,
+          0
+        ) / event.reviews!.length
+      : 0;
 
   return {
     ...event,

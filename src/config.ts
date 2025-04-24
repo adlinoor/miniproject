@@ -8,4 +8,7 @@ export const {
   CLOUDINARY_SECRET,
   NODEMAILER_USER,
   NODEMAILER_PASS,
+  FRONTEND_URL,
+  DATABASE_URL,
+  DIRECT_URL,
 } = process.env;
