@@ -1,20 +1,25 @@
 import express from "express";
-import { VerifyToken, authorizeRoles } from "../middleware/auth.middleware";
-import { Prisma } from "@prisma/client";
-import { Multer } from "../utils/multer";
-import { uploadToCloudinary } from "../services/cloudinary.service";
-import { prisma, upload } from "..";
+import { authenticate } from "../middleware/auth.middleware";
+import { upload, uploadToCloudinary } from "../services/cloudinary.service";
+import prisma from "../lib/prisma";
+import { validateRequest } from "../middleware/validator.middleware";
+import { z } from "zod";
 
 const router = express.Router();
 
-router.get("/me", VerifyToken, async (req, res, next) => {
-  try {
-    if (!req.user?.id) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+// Validation schema for profile updates
+const profileUpdateSchema = z.object({
+  first_name: z.string().min(1, "First name is required").optional(),
+  last_name: z.string().min(1, "Last name is required").optional(),
+});
 
+/**
+ * Get the authenticated user's profile.
+ */
+router.get("/me", authenticate, async (req, res, next) => {
+  try {
     const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
+      where: { id: Number(req.user!.id) },
       select: {
         id: true,
         first_name: true,
@@ -39,35 +44,36 @@ router.get("/me", VerifyToken, async (req, res, next) => {
     });
 
     if (!user) {
-      res.status(404).json({ message: "User not found" });
-      return;
+      return res.status(404).json({ message: "User not found" });
     }
 
-    res.json(user);
+    res.status(200).json(user);
   } catch (error) {
+    console.error("Error fetching user profile:", error);
     next(error);
   }
 });
 
+/**
+ * Update the authenticated user's profile.
+ */
 router.put(
   "/profile",
-  VerifyToken,
+  authenticate,
   upload.single("profilePicture"),
+  validateRequest(profileUpdateSchema),
   async (req, res, next) => {
     try {
       const { first_name, last_name } = req.body;
       let profilePictureUrl;
 
+      // Upload profile picture if provided
       if (req.file) {
-        try {
-          profilePictureUrl = await uploadToCloudinary(req.file);
-        } catch (error) {
-          return res.status(500).json({ message: "Failed to upload image" });
-        }
+        profilePictureUrl = await uploadToCloudinary(req.file);
       }
 
       const updatedUser = await prisma.user.update({
-        where: { id: req.user?.id },
+        where: { id: Number(req.user!.id) },
         data: {
           first_name,
           last_name,
@@ -75,8 +81,9 @@ router.put(
         },
       });
 
-      res.json(updatedUser);
+      res.status(200).json(updatedUser);
     } catch (error) {
+      console.error("Error updating user profile:", error);
       next(error);
     }
   }

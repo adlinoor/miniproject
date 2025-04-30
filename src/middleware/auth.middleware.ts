@@ -1,64 +1,50 @@
 import { Request, Response, NextFunction } from "express";
 import { verify, JwtPayload } from "jsonwebtoken";
-import { IUserReqParam } from "../custom";
 import { SECRET_KEY } from "../config";
-import { Role } from "@prisma/client";
 
-async function VerifyToken(req: Request, res: Response, next: NextFunction) {
-  try {
-    const token = req.header("Authorization")?.replace("Bearer ", "");
+type Role = "customer" | "organizer"; // Define valid roles
 
-    if (!token) return res.status(401).json({ message: "Unauthorized" });
-
-    const verifyUser = verify(token, String(SECRET_KEY));
-
-    if (typeof verifyUser !== "object" || !verifyUser) {
-      return res.status(401).json({ message: "Invalid Token" });
-    }
-
-    const { id, email, first_name, last_name, role } = verifyUser as JwtPayload;
-
-    if (!id || !email || !role) {
-      return res.status(401).json({ message: "Invalid Token Payload" });
-    }
-
-    req.user = { id, email, first_name, last_name, role } as IUserReqParam;
-
-    next();
-  } catch (err) {
-    res
-      .status(401)
-      .json({ message: "Unauthorized", error: (err as Error).message });
-  }
+interface DecodedToken extends JwtPayload {
+  id: string;
+  email: string;
+  role: Role;
 }
 
-async function EOGuard(req: Request, res: Response, next: NextFunction) {
+export const authenticate = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    if (req.user?.role !== Role.organizer)
-      return res.status(403).json({ message: "Restricted" });
+    const authHeader = req.header("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    if (!SECRET_KEY) {
+      throw new Error("SECRET_KEY is not defined");
+    }
+
+    const decoded = verify(token, SECRET_KEY) as DecodedToken;
+
+    req.user = {
+      id: decoded.id,
+      role: decoded.role,
+      email: decoded.email,
+    };
 
     next();
-  } catch (err) {
-    res
-      .status(403)
-      .json({ message: "Forbidden", error: (err as Error).message });
+  } catch (error) {
+    res.status(401).json({ message: "Invalid token" });
   }
-}
+};
 
-function authorizeRoles(roles: Role[]) {
+export const authorizeRoles = (...roles: Role[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    try {
-      if (!roles.includes(req.user?.role as Role)) {
-        return res.status(403).json({ message: "Restricted" });
-      }
-
-      next();
-    } catch (err) {
-      res
-        .status(403)
-        .json({ message: "Forbidden", error: (err as Error).message });
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Forbidden" });
     }
+    next();
   };
-}
-
-export { VerifyToken, EOGuard, authorizeRoles };
+};

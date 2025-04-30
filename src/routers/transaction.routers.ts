@@ -1,45 +1,29 @@
 import express from "express";
-import { upload } from "../app";
-import { authenticate } from "../middleware/auth";
+import { authenticate, authorizeRoles } from "../middleware/auth.middleware";
 import {
-  createTransaction,
-  uploadPaymentProof,
-  createTransactionSchema,
-} from "../services/transaction.service";
-import { validateRequest } from "../middleware/validateRequest";
+  createEventTransaction,
+  getTransactionDetails,
+  updateTransaction,
+  handlePaymentProof,
+} from "../controllers/transaction.controller";
+import { upload } from "../services/cloudinary.service";
 
 const router = express.Router();
 
-router.post(
-  "/",
+// Routes for transactions
+router.post("/", authenticate, createEventTransaction); // Accessible by authenticated users
+router.get("/:id", authenticate, getTransactionDetails); // Accessible by authenticated users
+router.put(
+  "/:id",
   authenticate,
-  validateRequest(createTransactionSchema),
-  async (req, res, next) => {
-    try {
-      const transaction = await createTransaction(req.body, req.user.id);
-      res.status(201).json(transaction);
-    } catch (error) {
-      next(error);
-    }
-  }
+  authorizeRoles("organizer"), // Only organizers can update transactions
+  updateTransaction
 );
-
 router.post(
   "/:id/payment-proof",
   authenticate,
   upload.single("proof"),
-  async (req, res, next) => {
-    try {
-      const transaction = await uploadPaymentProof(
-        req.params.id,
-        req.user.id,
-        req.file!
-      );
-      res.json(transaction);
-    } catch (error) {
-      next(error);
-    }
-  }
+  handlePaymentProof
 );
 
 export default router;
