@@ -1,0 +1,14 @@
+import "dotenv/config";
+
+export const {
+  PORT,
+  SECRET_KEY,
+  CLOUDINARY_NAME,
+  CLOUDINARY_KEY,
+  CLOUDINARY_SECRET,
+  NODEMAILER_USER,
+  NODEMAILER_PASS,
+  FRONTEND_URL,
+  DATABASE_URL,
+  DIRECT_URL,
+} = process.env;
