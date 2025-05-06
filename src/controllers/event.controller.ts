@@ -1,10 +1,100 @@
 import { Request, Response } from "express";
 import prisma from "../lib/prisma";
-import { z } from "zod";
+import { number, z } from "zod";
 
-/**
- * Fetch all events with optional filters.
- */
+export const createEventSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().min(1, "Description is required"),
+  startDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
+    message: "Invalid start date",
+  }),
+  endDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
+    message: "Invalid end date",
+  }),
+  location: z.string().min(1, "Location is required"),
+  category: z.string().min(1, "Category is required"),
+  price: z.number().min(0, "Price must be a positive number"),
+  availableSeats: z.number().min(1, "Available seats must be at least 1"),
+});
+
+export const updateEventSchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  startDate: z
+    .string()
+    .optional()
+    .refine((date) => !date || !isNaN(Date.parse(date)), {
+      message: "Invalid start date",
+    }),
+  endDate: z
+    .string()
+    .optional()
+    .refine((date) => !date || !isNaN(Date.parse(date)), {
+      message: "Invalid end date",
+    }),
+  location: z.string().optional(),
+  category: z.string().optional(),
+  price: z.number().min(0, "Price must be a positive number").optional(),
+  availableSeats: z
+    .number()
+    .min(1, "Available seats must be at least 1")
+    .optional(),
+});
+
+export const createEvent = async (req: Request, res: Response) => {
+  try {
+    const {
+      title,
+      description,
+      startDate,
+      endDate,
+      location,
+      category,
+      price,
+      availableSeats,
+      ticketTypes,
+    } = req.body;
+
+    const organizerId = req.user?.id;
+
+    if (!organizerId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const event = await prisma.$transaction(async (tx) => {
+      const newEvent = await tx.event.create({
+        data: {
+          title,
+          description,
+          startDate: new Date(startDate),
+          endDate: new Date(endDate),
+          location,
+          category,
+          price,
+          availableSeats: Number(availableSeats),
+          organizerId,
+        },
+      });
+
+      if (ticketTypes && ticketTypes.length > 0) {
+        await tx.ticket.createMany({
+          data: ticketTypes.map((ticket: any) => ({
+            eventId: newEvent.id,
+            ...ticket,
+          })),
+        });
+      }
+
+      return newEvent;
+    });
+
+    res.status(201).json(event);
+  } catch (error) {
+    console.error("Error creating event:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const getEvents = async (req: Request, res: Response) => {
   try {
     const {
@@ -60,7 +150,6 @@ export const getEvents = async (req: Request, res: Response) => {
       prisma.event.findMany({
         where,
         include: {
-          images: true,
           organizer: {
             select: {
               id: true,
@@ -68,9 +157,11 @@ export const getEvents = async (req: Request, res: Response) => {
               last_name: true,
             },
           },
-          _count: {
-            select: {
-              reviews: true,
+          tickets: true,
+          promotions: {
+            where: {
+              startDate: { lte: new Date() },
+              endDate: { gte: new Date() },
             },
           },
         },
@@ -81,21 +172,8 @@ export const getEvents = async (req: Request, res: Response) => {
       prisma.event.count({ where }),
     ]);
 
-    const eventsWithRatings = await Promise.all(
-      events.map(async (event) => {
-        const avgRating = await prisma.review.aggregate({
-          where: { eventId: event.id },
-          _avg: { rating: true },
-        });
-        return {
-          ...event,
-          averageRating: avgRating._avg.rating || 0,
-        };
-      })
-    );
-
     res.json({
-      data: eventsWithRatings,
+      data: events,
       meta: {
         total,
         page: pageNumber,
@@ -109,9 +187,6 @@ export const getEvents = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Fetch a specific event by ID.
- */
 export const getEventById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -119,7 +194,6 @@ export const getEventById = async (req: Request, res: Response) => {
     const event = await prisma.event.findUnique({
       where: { id: parseInt(id, 10) },
       include: {
-        images: true,
         organizer: {
           select: {
             id: true,
@@ -127,9 +201,17 @@ export const getEventById = async (req: Request, res: Response) => {
             last_name: true,
           },
         },
-        _count: {
-          select: {
-            reviews: true,
+        tickets: true,
+        promotions: true,
+        reviews: {
+          include: {
+            user: {
+              select: {
+                first_name: true,
+                last_name: true,
+                profilePicture: true,
+              },
+            },
           },
         },
       },
@@ -141,72 +223,27 @@ export const getEventById = async (req: Request, res: Response) => {
 
     res.json(event);
   } catch (error) {
-    console.error("Error fetching event by ID:", error);
+    console.error("Error fetching event:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-/**
- * Create a new event.
- */
-export const createEvent = async (req: Request, res: Response) => {
-  try {
-    const {
-      title,
-      description,
-      startDate,
-      endDate,
-      location,
-      category,
-      price,
-      availableSeats,
-    } = req.body;
-    const organizerId = req.user?.id;
-
-    if (!organizerId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const event = await prisma.event.create({
-      data: {
-        title,
-        description,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate), // Ensure this is included
-        location,
-        category,
-        price,
-        availableSeats: parseInt(availableSeats, 10), // Ensure this is included
-        organizerId: parseInt(organizerId, 10),
-      },
-    });
-
-    res.status(201).json(event);
-  } catch (error) {
-    console.error("Error creating event:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-/**
- * Update an existing event.
- */
 export const updateEvent = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, description, startDate, location, category, price } =
-      req.body;
+    const updateData = req.body;
+
+    // Convert dates if they exist
+    if (updateData.startDate) {
+      updateData.startDate = new Date(updateData.startDate);
+    }
+    if (updateData.endDate) {
+      updateData.endDate = new Date(updateData.endDate);
+    }
 
     const event = await prisma.event.update({
       where: { id: parseInt(id, 10) },
-      data: {
-        title,
-        description,
-        startDate: startDate ? new Date(startDate) : undefined,
-        location,
-        category,
-        price,
-      },
+      data: updateData,
     });
 
     res.json(event);
@@ -216,9 +253,6 @@ export const updateEvent = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Delete an event.
- */
 export const deleteEvent = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -233,42 +267,3 @@ export const deleteEvent = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-export const createEventSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  description: z.string().min(1, "Description is required"),
-  startDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
-    message: "Invalid start date",
-  }),
-  endDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
-    message: "Invalid end date",
-  }),
-  location: z.string().min(1, "Location is required"),
-  category: z.string().min(1, "Category is required"),
-  price: z.number().min(0, "Price must be a positive number"),
-  availableSeats: z.number().min(1, "Available seats must be at least 1"),
-});
-
-export const updateEventSchema = z.object({
-  title: z.string().optional(),
-  description: z.string().optional(),
-  startDate: z
-    .string()
-    .optional()
-    .refine((date) => typeof date === "string" && !isNaN(Date.parse(date)), {
-      message: "Invalid start date",
-    }),
-  endDate: z
-    .string()
-    .optional()
-    .refine((date) => typeof date === "string" && !isNaN(Date.parse(date)), {
-      message: "Invalid end date",
-    }),
-  location: z.string().optional(),
-  category: z.string().optional(),
-  price: z.number().min(0, "Price must be a positive number").optional(),
-  availableSeats: z
-    .number()
-    .min(1, "Available seats must be at least 1")
-    .optional(),
-});

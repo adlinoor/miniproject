@@ -1,50 +1,49 @@
 import { Request, Response, NextFunction } from "express";
-import { verify, JwtPayload } from "jsonwebtoken";
-import { SECRET_KEY } from "../config";
+import jwt from "jsonwebtoken";
+import { Role } from "@prisma/client";
+import prisma from "../lib/prisma";
+import { IUserReqParam } from "../custom";
 
-type Role = "customer" | "organizer"; // Define valid roles
-
-interface DecodedToken extends JwtPayload {
-  id: string;
-  email: string;
-  role: Role;
-}
-
-export const authenticate = async (
+export const authMiddleware = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const authHeader = req.header("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const token = authHeader.replace("Bearer ", "");
-    if (!SECRET_KEY) {
-      throw new Error("SECRET_KEY is not defined");
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as IUserReqParam;
+
+    // Verify user exists
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+    });
+
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const decoded = verify(token, SECRET_KEY) as DecodedToken;
-
-    req.user = {
-      id: decoded.id,
-      role: decoded.role,
-      email: decoded.email,
-    };
-
+    req.user = decoded;
     next();
   } catch (error) {
-    res.status(401).json({ message: "Invalid token" });
+    return res.status(401).json({ message: "Unauthorized" });
   }
 };
 
-export const authorizeRoles = (...roles: Role[]) => {
+export const requireRole = (roles: Role[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    if (!roles.includes(req.user.role)) {
       return res.status(403).json({ message: "Forbidden" });
     }
+
     next();
   };
 };

@@ -1,5 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import prisma from "../lib/prisma";
 
 export const createEvent = async (
   title: string,
@@ -129,7 +128,15 @@ export const createPromotion = async (
     },
   });
 };
-// Export the function to make it available for import
-export function restoreTicketAvailability(tx: any, details: any) {
-  // Function implementation
-}
+
+export const getOrganizerStats = async (organizerId: number) => {
+  return await prisma.$queryRaw`
+    SELECT 
+      DATE_TRUNC('month', created_at) AS month,
+      COUNT(*) AS event_count,
+      SUM(available_seats) AS total_seats
+    FROM events
+    WHERE organizer_id = ${organizerId}
+    GROUP BY month
+  `;
+};

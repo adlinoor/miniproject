@@ -25,6 +25,8 @@ jest.mock("jsonwebtoken");
 describe("Auth Service", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Mock Math.random to return a consistent value for referralCode
+    jest.spyOn(Math, "random").mockReturnValue(0.123456); // Mocking Math.random to return a consistent value
   });
 
   describe("RegisterService", () => {
@@ -39,6 +41,10 @@ describe("Auth Service", () => {
         last_name: MOCK_LAST_NAME,
         isVerified: false,
         role: MOCK_ROLE,
+        referralCode: `REF-${Math.random()
+          .toString(36)
+          .substring(2, 10)
+          .toUpperCase()}`,
       });
 
       // Call the service
@@ -58,9 +64,13 @@ describe("Auth Service", () => {
           first_name: MOCK_FIRST_NAME,
           last_name: MOCK_LAST_NAME,
           email: MOCK_EMAIL,
-          isVerified: false,
           password: MOCK_HASHED_PASSWORD,
           role: MOCK_ROLE,
+          isVerified: false,
+          referralCode: `REF-${Math.random()
+            .toString(36)
+            .substring(2, 10)
+            .toUpperCase()}`,
         },
       });
     });
@@ -101,6 +111,7 @@ describe("Auth Service", () => {
         last_name: MOCK_LAST_NAME,
         password: MOCK_HASHED_PASSWORD,
         role: MOCK_ROLE,
+        isVerified: true,
       });
       (bcrypt.compare as jest.Mock).mockResolvedValue(true); // Password matches
       (jwt.sign as jest.Mock).mockReturnValue(MOCK_JWT_TOKEN); // Mock JWT token
@@ -161,6 +172,7 @@ describe("Auth Service", () => {
         last_name: MOCK_LAST_NAME,
         password: MOCK_HASHED_PASSWORD,
         role: MOCK_ROLE,
+        isVerified: true,
       });
       (bcrypt.compare as jest.Mock).mockResolvedValue(false); // Password does not match
 
@@ -182,5 +194,9 @@ describe("Auth Service", () => {
       );
       expect(jwt.sign).not.toHaveBeenCalled();
     });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 });

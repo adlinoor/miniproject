@@ -1,22 +1,34 @@
 import prisma from "../lib/prisma";
 import { sendEmail } from "./email.service";
+import { generateCouponCode } from "../utils/coupon.utils";
 
 export const applyReferral = async (userId: number, referralCode: string) => {
   return await prisma.$transaction(async (tx) => {
     // Check if user already used a referral
     const user = await tx.user.findUnique({
       where: { id: userId },
-      select: { referredBy: true, first_name: true },
+      select: {
+        referredBy: true,
+        first_name: true,
+      },
     });
 
-    if (user?.referredBy) {
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (user.referredBy) {
       throw new Error("You already used a referral code");
     }
 
     // Find referrer
     const referrer = await tx.user.findUnique({
       where: { referralCode },
-      select: { id: true, email: true, first_name: true },
+      select: {
+        id: true,
+        email: true,
+        first_name: true,
+      },
     });
 
     if (!referrer) {
@@ -34,7 +46,7 @@ export const applyReferral = async (userId: number, referralCode: string) => {
     });
 
     // Create points for referrer
-    await tx.point.create({
+    const points = await tx.point.create({
       data: {
         userId: referrer.id,
         amount: 10000,
@@ -46,33 +58,52 @@ export const applyReferral = async (userId: number, referralCode: string) => {
     const coupon = await tx.coupon.create({
       data: {
         userId,
-        code: `WELCOME-${Math.random()
-          .toString(36)
-          .substring(2, 8)
-          .toUpperCase()}`,
+        code: generateCouponCode(),
         discount: 10000,
         expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 3)),
       },
     });
 
     // Send notifications
-    await sendEmail(
-      referrer.email,
-      "Referral Reward",
-      `You've earned 10,000 points because ${
-        user?.first_name || "someone"
-      } used your referral code!`
-    );
+    try {
+      await sendEmail(
+        referrer.email,
+        "Referral Reward",
+        `You've earned 10,000 points because ${
+          user.first_name || "someone"
+        } used your referral code!`
+      );
+    } catch (error) {
+      console.error("Failed to send referral email:", error);
+      // Don't throw error here as the referral process should still complete
+    }
 
     return coupon;
   });
 };
 
-// Ensure refundPoints is defined and exported
 export const refundPoints = async (
   tx: typeof prisma,
   userId: number,
   points: number
 ) => {
-  // Logic to refund points
+  await tx.point.create({
+    data: {
+      userId,
+      amount: points,
+      expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 3)),
+    },
+  });
+};
+
+export const getUserPoints = async (userId: number) => {
+  const points = await prisma.point.findMany({
+    where: {
+      userId,
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { expiresAt: "asc" },
+  });
+
+  return points.reduce((total, point) => total + point.amount, 0);
 };

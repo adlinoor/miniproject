@@ -1,41 +1,50 @@
-import express from "express";
-import { authenticate, authorizeRoles } from "../middleware/auth.middleware";
+import { Router } from "express";
 import {
   createEvent,
   getEvents,
   getEventById,
   updateEvent,
   deleteEvent,
-} from "../controllers/event.controller";
-import { validateRequest } from "../middleware/validator.middleware";
-import {
   createEventSchema,
   updateEventSchema,
 } from "../controllers/event.controller";
+import {
+  validateRequest,
+  validateDates,
+} from "../middleware/validator.middleware";
+import { authMiddleware, requireRole } from "../middleware/auth.middleware";
+import { Role } from "@prisma/client";
 
-const router = express.Router();
+const router = Router();
 
 // Public routes
-router.get("/", getEvents); // Fetch all events
-router.get("/:id", getEventById); // Fetch a specific event by ID
+router.get("/", getEvents);
+router.get("/:id", getEventById);
 
-// Organizer-only routes
+// Protected routes - Only organizers can create/update/delete events
 router.post(
   "/",
-  authenticate,
-  authorizeRoles("organizer"),
+  authMiddleware,
+  requireRole([Role.organizer]),
   validateRequest(createEventSchema),
+  validateDates("startDate", "endDate"),
   createEvent
-); // Create a new event
+);
 
 router.put(
   "/:id",
-  authenticate,
-  authorizeRoles("organizer"),
+  authMiddleware,
+  requireRole([Role.organizer]),
   validateRequest(updateEventSchema),
+  validateDates("startDate", "endDate"),
   updateEvent
-); // Update an existing event
+);
 
-router.delete("/:id", authenticate, authorizeRoles("organizer"), deleteEvent); // Delete an event
+router.delete(
+  "/:id",
+  authMiddleware,
+  requireRole([Role.organizer]),
+  deleteEvent
+);
 
 export default router;

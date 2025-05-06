@@ -1,14 +1,14 @@
-import express from "express";
+import { Router } from "express";
+import { authMiddleware } from "../middleware/auth.middleware";
 import {
   createReview,
   getEventReviews,
 } from "../controllers/review.controller";
-import { authenticate } from "../middleware/auth.middleware";
 
-const router = express.Router();
+const router = Router();
 
 // POST /api/reviews - Create a new review
-router.post("/", authenticate, createReview);
+router.post("/", authMiddleware, createReview);
 
 // GET /api/reviews/event/:eventId - Get reviews for an event
 router.get("/event/:eventId", getEventReviews);

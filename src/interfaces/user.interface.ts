@@ -1,9 +1,11 @@
+import { Role } from "@prisma/client";
+
 export interface IRegisterParam {
   first_name: string;
   last_name: string;
   email: string;
   password: string;
-  role: "customer" | "organizer";
+  role: Role;
 }
 
 export interface ILoginParam {
@@ -12,12 +14,12 @@ export interface ILoginParam {
 }
 
 // Define and export the User interface
-export interface User {
+export interface IUser {
   id: number;
   email: string;
   first_name: string;
   last_name: string;
-  role: string;
+  role: Role;
   profilePicture?: string;
   isVerified: boolean;
 }

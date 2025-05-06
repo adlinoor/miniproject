@@ -1,5 +1,5 @@
 import express from "express";
-import { authenticate } from "../middleware/auth.middleware";
+import { authMiddleware } from "../middleware/auth.middleware";
 import { upload, uploadToCloudinary } from "../services/cloudinary.service";
 import prisma from "../lib/prisma";
 import { validateRequest } from "../middleware/validator.middleware";
@@ -16,10 +16,10 @@ const profileUpdateSchema = z.object({
 /**
  * Get the authenticated user's profile.
  */
-router.get("/me", authenticate, async (req, res, next) => {
+router.get("/me", authMiddleware, async (req, res, next) => {
   try {
     const user = await prisma.user.findUnique({
-      where: { id: Number(req.user!.id) },
+      where: { id: req.user?.id },
       select: {
         id: true,
         first_name: true,
@@ -59,7 +59,7 @@ router.get("/me", authenticate, async (req, res, next) => {
  */
 router.put(
   "/profile",
-  authenticate,
+  authMiddleware,
   upload.single("profilePicture"),
   validateRequest(profileUpdateSchema),
   async (req, res, next) => {

@@ -138,6 +138,8 @@ model Transaction {
   expiresAt       DateTime
 
   @@index([userId, eventId]) // Composite index for faster queries
+    @@index([status, expiresAt]) // Untuk cron job
+  @@index([userId, status])   // Untuk dashboard user
   details        TransactionDetail[]
 }
 

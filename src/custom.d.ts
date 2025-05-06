@@ -5,7 +5,7 @@ declare global {
   namespace Express {
     interface Request {
       user?: {
-        id: string;
+        id: number;
         email: string;
         first_name?: string;
         last_name?: string;
@@ -15,7 +15,7 @@ declare global {
   }
 }
 export interface IUserReqParam {
-  id: string;
+  id: number;
   email: string;
   first_name?: string;
   last_name?: string;
