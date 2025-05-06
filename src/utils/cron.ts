@@ -1,4 +1,8 @@
 import cron from "node-cron";
+import { checkTransactionExpirations } from "../services/transaction.service";
+
+// Run every 30 minutes
+cron.schedule("*/30 * * * *", checkTransactionExpirations);
 
 /**
  * Schedules a task to run at a specified cron schedule.
