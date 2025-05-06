@@ -1,7 +1,14 @@
 import prisma from "../lib/prisma";
-import { TransactionStatus } from "@prisma/client";
+import { Prisma, TransactionStatus } from "@prisma/client";
 import { sendEmail } from "./email.service";
 
+type TransactionWithDetails = Prisma.TransactionGetPayload<{
+  include: {
+    event: true;
+    user: { select: { email: true; first_name: true; last_name: true } };
+    details: { include: { ticket: true } };
+  };
+}>;
 // Constants from requirements
 const PAYMENT_WINDOW_HOURS = 2;
 const POINT_EXPIRY_MONTHS = 3;
@@ -14,11 +21,6 @@ export const createTransaction = async (
   pointsUsed?: number,
   ticketTypeId?: number
 ) => {
-  // Input validation (redundant since controller already validated)
-  if (!userId || !eventId || !quantity) {
-    throw new Error("Missing required fields");
-  }
-
   return await prisma.$transaction(async (tx) => {
     // 1. Validate event and user
     const [event, user] = await Promise.all([
@@ -26,11 +28,21 @@ export const createTransaction = async (
         where: { id: eventId },
         include: { tickets: true },
       }),
-      tx.user.findUnique({ where: { id: userId } }),
+      tx.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          userPoints: true,
+        },
+      }),
     ]);
 
     if (!event) throw new Error("Event not found");
     if (!user) throw new Error("User not found");
+    if (event.availableSeats < quantity) {
+      throw new Error("Not enough available seats for this event");
+    }
 
     // 2. Handle ticket type if specified
     let ticketPrice = event.price;

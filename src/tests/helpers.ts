@@ -1,4 +1,10 @@
-import { Role, User, Event, Promotion } from "@prisma/client";
+import {
+  Role,
+  User,
+  Event,
+  Promotion,
+  TransactionStatus,
+} from "@prisma/client";
 
 // Type extensions for Prisma models
 type MockUser = User & {
@@ -107,6 +113,30 @@ export const createMockPromotion = (
   ...overrides,
 });
 
+export const createMockTransaction = (overrides = {}) => ({
+  id: 1,
+  eventId: mockEvent.id,
+  userId: mockUser.id,
+  quantity: 2,
+  totalPrice: mockEvent.price * 2,
+  status: "waiting_for_payment" as TransactionStatus,
+  expiresAt: new Date(Date.now() + 7200000), // 2 hours
+  paymentProof: null,
+  voucherCode: null,
+  pointsUsed: 0,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  event: mockEvent,
+  user: {
+    id: mockUser.id,
+    email: mockUser.email,
+    first_name: mockUser.first_name,
+    last_name: mockUser.last_name,
+  },
+  details: [],
+  ...IDBTransaction,
+  ...overrides,
+});
 // Utility functions
 export const getFutureDate = (daysFromNow: number) =>
   new Date(mockDate.getTime() + daysFromNow * 86400000);

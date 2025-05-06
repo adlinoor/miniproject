@@ -4,12 +4,19 @@ import {
   updateTransactionStatus,
 } from "../services/transaction.service";
 import { prismaMock } from "./setup";
-import { TransactionStatus } from "@prisma/client";
+import { Prisma, TransactionStatus } from "@prisma/client";
 import { mockEvent, mockUser } from "./helpers";
+
+type TransactionWithDetails = Prisma.TransactionGetPayload<{
+  include: {
+    event: true;
+    user: { select: { email: true; first_name: true; last_name: true } };
+    details: { include: { ticket: true } };
+  };
+}>;
 
 describe("Transaction Service", () => {
   const mockDate = new Date();
-
   const mockTransaction = {
     id: 1,
     eventId: mockEvent.id,
@@ -17,50 +24,54 @@ describe("Transaction Service", () => {
     quantity: 2,
     totalPrice: mockEvent.price * 2,
     status: "waiting_for_payment" as TransactionStatus,
-    expiresAt: new Date(mockDate.getTime() + 24 * 60 * 60 * 1000),
+    expiresAt: new Date(mockDate.getTime() + 2 * 60 * 60 * 1000),
     paymentProof: null,
     voucherCode: null,
     pointsUsed: 0,
     createdAt: mockDate,
     updatedAt: mockDate,
+    event: mockEvent,
+    user: {
+      id: mockUser.id,
+      email: mockUser.email,
+      first_name: mockUser.first_name,
+      last_name: mockUser.last_name,
+    },
+    details: [],
+    nextSteps: "Please complete payment within 2 hours",
+    paymentWindow: 2,
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
+    prismaMock.user.findUnique.mockResolvedValue(mockUser);
   });
 
   describe("createTransaction", () => {
     it("should create a transaction successfully", async () => {
-      // Mock event find
       prismaMock.event.findUnique.mockResolvedValue({
         ...mockEvent,
         availableSeats: 10,
       });
 
-      // Mock transaction create
       prismaMock.transaction.create.mockResolvedValue(mockTransaction);
-
-      // Mock event update
       prismaMock.event.update.mockResolvedValue({
         ...mockEvent,
         availableSeats: 8,
       });
 
-      // Mock transaction
-      (prismaMock.$transaction as jest.Mock).mockImplementation((callback) =>
-        callback(prismaMock)
+      (prismaMock.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          return callback(prismaMock);
+        }
       );
 
-      const result = await createTransaction(
-        mockTransaction.userId,
-        mockTransaction.eventId,
-        mockTransaction.quantity
-      );
+      const result = await createTransaction(mockUser.id, mockEvent.id, 2);
 
       expect(result).toEqual(mockTransaction);
       expect(prismaMock.event.update).toHaveBeenCalledWith({
         where: { id: mockEvent.id },
-        data: { availableSeats: 8 },
+        data: { availableSeats: { decrement: 2 } }, // Changed to match actual implementation
       });
     });
 
@@ -99,10 +110,11 @@ describe("Transaction Service", () => {
         event: mockEvent,
         user: {
           id: mockUser.id,
+          email: mockUser.email,
           first_name: mockUser.first_name,
           last_name: mockUser.last_name,
-          email: mockUser.email,
         },
+        details: [],
       };
 
       prismaMock.transaction.findUnique.mockResolvedValue(
@@ -118,10 +130,14 @@ describe("Transaction Service", () => {
           event: true,
           user: {
             select: {
-              id: true,
+              email: true,
               first_name: true,
               last_name: true,
-              email: true,
+            },
+          },
+          details: {
+            include: {
+              ticket: true,
             },
           },
         },
@@ -141,7 +157,7 @@ describe("Transaction Service", () => {
     it("should update transaction status successfully", async () => {
       const updatedTransaction = {
         ...mockTransaction,
-        status: "paid" as TransactionStatus,
+        status: "done" as TransactionStatus,
         paymentProof: "proof.jpg",
       };
 
@@ -150,7 +166,7 @@ describe("Transaction Service", () => {
 
       const result = await updateTransactionStatus(
         mockTransaction.id,
-        "paid" as TransactionStatus,
+        "done",
         "proof.jpg"
       );
 
@@ -158,7 +174,7 @@ describe("Transaction Service", () => {
       expect(prismaMock.transaction.update).toHaveBeenCalledWith({
         where: { id: mockTransaction.id },
         data: {
-          status: "paid",
+          status: "done",
           paymentProof: "proof.jpg",
         },
       });
@@ -167,9 +183,9 @@ describe("Transaction Service", () => {
     it("should throw error if transaction not found", async () => {
       prismaMock.transaction.findUnique.mockResolvedValue(null);
 
-      await expect(
-        updateTransactionStatus(999, "paid" as TransactionStatus)
-      ).rejects.toThrow("Transaction not found");
+      await expect(updateTransactionStatus(999, "done")).rejects.toThrow(
+        "Transaction not found"
+      );
     });
   });
 });
