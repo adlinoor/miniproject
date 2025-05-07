@@ -50,7 +50,7 @@ export const LoginService = async (param: ILoginParam) => {
       last_name: user.last_name,
       role: user.role,
     },
-    process.env.JWT_SECRET!,
+    process.env.SECRET_KEY!,
     { expiresIn: "1h" }
   );
 

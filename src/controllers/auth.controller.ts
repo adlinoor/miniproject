@@ -1,7 +1,14 @@
 import { Request, Response } from "express";
 import * as authService from "../services/auth.service";
 import { z } from "zod";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 
+dotenv.config();
+
+const generateToken = (userId: string) => {
+  return jwt.sign({ id: userId }, process.env.SECRET_KEY!);
+};
 // Validation schemas
 export const registerSchema = z.object({
   first_name: z.string().min(1, "First name is required"),

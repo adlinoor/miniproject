@@ -16,7 +16,7 @@ export const authMiddleware = async (
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as IUserReqParam;
+    const decoded = jwt.verify(token, process.env.SECRET_KEY!) as IUserReqParam;
 
     // Verify user exists
     const user = await prisma.user.findUnique({

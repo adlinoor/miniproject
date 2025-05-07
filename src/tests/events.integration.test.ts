@@ -1,5 +1,5 @@
 import request from "supertest";
-import { app } from "..";
+import { app } from "../app";
 import { prismaMock } from "./setup";
 import jwt from "jsonwebtoken";
 import { mockEvent, mockUser } from "./helpers";
