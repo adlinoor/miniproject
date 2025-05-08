@@ -12,7 +12,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.server = exports.app = void 0;
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
@@ -29,11 +28,10 @@ const transaction_routers_1 = __importDefault(require("./routers/transaction.rou
 const user_routers_1 = __importDefault(require("./routers/user.routers"));
 const cloudinary_service_1 = require("./services/cloudinary.service");
 const email_service_1 = require("./services/email.service");
-// Initialize configuration
+// Load environment variables
 dotenv_1.default.config();
-// Validate environment variables
+// Validate required env vars
 const requiredEnvVars = [
-    "PORT",
     "SECRET_KEY",
     "FRONTEND_URL",
     "CLOUDINARY_NAME",
@@ -44,15 +42,14 @@ const requiredEnvVars = [
 ];
 for (const key of requiredEnvVars) {
     if (!process.env[key]) {
-        console.error(`Missing required environment variable: ${key}`);
+        console.error(`❌ Missing required environment variable: ${key}`);
         process.exit(1);
     }
 }
-// App setup
 const app = (0, express_1.default)();
-exports.app = app;
-const PORT = process.env.PORT || 8080;
-// Security middleware
+// ======================
+//      Middleware
+// ======================
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)({
     origin: process.env.FRONTEND_URL,
@@ -63,59 +60,57 @@ app.use((0, express_rate_limit_1.rateLimit)({
     max: 100,
     message: "Too many requests, please try again later.",
 }));
-// Standard middleware
 app.use((0, morgan_1.default)("dev"));
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
 app.use((0, cookie_parser_1.default)());
 app.use(cloudinary_service_1.upload.single("file"));
-// Database connection check
-function checkDatabaseConnection() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            yield prisma_1.default.$queryRaw `SELECT 1`;
-            console.log("Database connected successfully");
-            return true;
-        }
-        catch (err) {
-            console.error("Database connection error:", err);
-            return false;
-        }
-    });
-}
-// Verify email service
-email_service_1.mailer.verify((err) => console.log(err ? `Mailer error: ${err}` : "Mailer ready"));
-// API routes
+// ======================
+//       Routes
+// ======================
 app.use("/api/auth", auth_routers_1.default);
 app.use("/api/events", event_routers_1.default);
 app.use("/api/reviews", review_routers_1.default);
 app.use("/api/transactions", transaction_routers_1.default);
 app.use("/api/users", user_routers_1.default);
 // Health check
-app.get("/api/health", (_, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const dbStatus = yield checkDatabaseConnection();
-    res.status(dbStatus ? 200 : 503).json({
-        status: dbStatus ? "OK" : "Service Unavailable",
-        database: dbStatus ? "connected" : "disconnected",
-    });
+app.get("/api/health", (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        yield prisma_1.default.$queryRaw `SELECT 1`;
+        res.status(200).json({
+            status: "OK",
+            database: "connected",
+            timestamp: new Date().toISOString(),
+        });
+    }
+    catch (err) {
+        res.status(503).json({
+            status: "Service Unavailable",
+            database: "disconnected",
+            error: err.message,
+        });
+    }
 }));
-// Error handling
+// Global error handler
 app.use(error_middleware_1.errorHandler);
-// Server lifecycle
-const server = app.listen(PORT, () => __awaiter(void 0, void 0, void 0, function* () {
-    yield checkDatabaseConnection();
-    console.log(`Server running on port ${PORT}`);
+// ======================
+//    Lazy Service Init
+// ======================
+let initialized = false;
+app.use((_req, _res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!initialized) {
+        try {
+            yield prisma_1.default.$connect();
+            console.log("✅ Database connected");
+            email_service_1.mailer.verify((err) => {
+                console.log(err ? `❌ Mailer error: ${err}` : "📧 Mailer ready");
+            });
+            initialized = true;
+        }
+        catch (err) {
+            console.error("❌ Initialization error:", err);
+        }
+    }
+    next();
 }));
-exports.server = server;
-// Clean shutdown
-const shutdown = () => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("Shutting down gracefully...");
-    yield prisma_1.default.$disconnect();
-    server.close(() => {
-        console.log("Server closed");
-        process.exit(0);
-    });
-});
-process.on("SIGINT", shutdown);
-process.on("SIGTERM", shutdown);
-exports.default = server;
+exports.default = app;
