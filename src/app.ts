@@ -15,68 +15,73 @@ import userRouter from "./routers/user.routers";
 import { upload } from "./services/cloudinary.service";
 import { mailer } from "./services/email.service";
 
-// Load environment variables
+// Initialize configuration
 dotenv.config();
 
-// Validate required environment variables
+// Validate environment variables
 const requiredEnvVars = [
   "PORT",
   "SECRET_KEY",
+  "FRONTEND_URL",
   "CLOUDINARY_NAME",
   "CLOUDINARY_KEY",
   "CLOUDINARY_SECRET",
   "NODEMAILER_USER",
   "NODEMAILER_PASS",
-  "FRONTEND_URL",
 ];
-requiredEnvVars.forEach((key) => {
+
+for (const key of requiredEnvVars) {
   if (!process.env[key]) {
-    console.error(`❌ Missing required environment variable: ${key}`);
+    console.error(`Missing required environment variable: ${key}`);
     process.exit(1);
   }
-});
+}
 
+// App setup
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// Middleware
-app.use(cors());
+// Security middleware
+app.use(helmet());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+  })
+);
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: "Too many requests, please try again later.",
+  })
+);
+
+// Standard middleware
+app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(morgan("dev"));
-app.use(helmet());
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: "Too many requests from this IP, please try again later.",
-});
-app.use(limiter);
-
-// Cloudinary middleware for file uploads
 app.use(upload.single("file"));
 
-// Database connection
-prisma
-  .$connect()
-  .then(() => console.log("✅ Connected to PostgreSQL via Prisma"))
-  .catch((err) => {
-    console.error("❌ Prisma connection error:", err);
-    process.exit(1);
-  });
-
-// Email service initialization
-mailer.verify((error: Error | null): void => {
-  if (error) {
-    console.error("❌ Mailer error:", error);
-  } else {
-    console.log("📧 Mailer is ready to send emails");
+// Database connection check
+async function checkDatabaseConnection() {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    console.log("Database connected successfully");
+    return true;
+  } catch (err) {
+    console.error("Database connection error:", err);
+    return false;
   }
-});
+}
 
-// Routes
+// Verify email service
+mailer.verify((err) =>
+  console.log(err ? `Mailer error: ${err}` : "Mailer ready")
+);
+
+// API routes
 app.use("/api/auth", authRouter);
 app.use("/api/events", eventRouter);
 app.use("/api/reviews", reviewRouter);
@@ -84,32 +89,35 @@ app.use("/api/transactions", transactionRouter);
 app.use("/api/users", userRouter);
 
 // Health check
-app.get("/api/health", (req, res) => {
-  res.status(200).json({ status: "OK" });
+app.get("/api/health", async (_, res) => {
+  const dbStatus = await checkDatabaseConnection();
+  res.status(dbStatus ? 200 : 503).json({
+    status: dbStatus ? "OK" : "Service Unavailable",
+    database: dbStatus ? "connected" : "disconnected",
+  });
 });
 
-// Error handling (must be last!)
+// Error handling
 app.use(errorHandler);
 
-// Graceful shutdown
-const gracefulShutdown = async (signal: string) => {
-  console.log(`🔄 Received ${signal}, shutting down gracefully...`);
-  await prisma.$disconnect();
-  process.exit();
-};
-
-process.on("SIGINT", () => gracefulShutdown("SIGINT"));
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-
-// Create and export the server instance
-const server = app.listen(PORT, () => {
-  console.log(
-    `🚀 Server running in ${
-      process.env.NODE_ENV || "development"
-    } mode on http://localhost:${PORT}`
-  );
+// Server lifecycle
+const server = app.listen(PORT, async () => {
+  await checkDatabaseConnection();
+  console.log(`Server running on port ${PORT}`);
 });
 
-// Export both app and server for different use cases
+// Clean shutdown
+const shutdown = async () => {
+  console.log("Shutting down gracefully...");
+  await prisma.$disconnect();
+  server.close(() => {
+    console.log("Server closed");
+    process.exit(0);
+  });
+};
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
+
+export { app, server };
 export default server;
-export { app };
