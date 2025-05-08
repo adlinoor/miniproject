@@ -3,7 +3,7 @@ import * as authService from "../services/auth.service";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import { PrismaClient, Role } from "@prisma/client"; // Import PrismaClient and Role enum
+import { PrismaClient } from "@prisma/client"; // Import PrismaClient and Role enum
 
 dotenv.config();
 
@@ -19,7 +19,7 @@ export const registerSchema = z.object({
   last_name: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email format"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.enum([Role.CUSTOMER, Role.ORGANIZER]).default(Role.CUSTOMER), // Use Role enum here
+  role: z.enum(["CUSTOMER", "ORGANIZER"]).default("CUSTOMER"),
 });
 
 export const loginSchema = z.object({
