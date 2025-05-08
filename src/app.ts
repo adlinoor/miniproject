@@ -40,6 +40,11 @@ app.use(errorHandler);
 
 // Only start the server if we're not in a test environment
 let server: any;
+if (process.env.NODE_ENV !== "test") {
+  server = app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
 
 // Export both app and server for testing purposes
-export { app };
+export { app, server };
