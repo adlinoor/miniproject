@@ -8,7 +8,8 @@ dotenv.config();
 
 // Function to generate JWT token
 const generateToken = (userId: number) => {
-  return jwt.sign({ id: userId }, process.env.SECRET_KEY!);
+  // Ensure userId is passed as a string to the token payload
+  return jwt.sign({ id: userId.toString() }, process.env.SECRET_KEY!);
 };
 
 // Validation schemas
@@ -33,14 +34,14 @@ export const register = async (req: Request, res: Response) => {
     // Validate the incoming request body
     const validatedData = registerSchema.parse(req.body);
 
-    // Pass validated data along with correct role (uppercase) to RegisterService
+    // Pass validated data along with correct role to RegisterService
     const user = await authService.RegisterService({
       ...validatedData,
-      role: validatedData.role, // No need to manually set role here; it's validated in schema
+      role: validatedData.role, // Use the role from validated data (it defaults to "CUSTOMER")
     });
 
     // Generate JWT token after successful registration
-    const token = generateToken(user.id);
+    const token = generateToken(user.id); // Convert user.id to string within generateToken
 
     // Send response with user and token
     res.status(201).json({ user, token });
@@ -55,10 +56,16 @@ export const register = async (req: Request, res: Response) => {
  */
 export const login = async (req: Request, res: Response) => {
   try {
+    // Validate the login credentials
     const validatedData = loginSchema.parse(req.body);
+
+    // Authenticate the user and generate a token
     const { user, token } = await authService.LoginService(validatedData);
+
+    // Send response with user and token
     res.json({ user, token });
   } catch (error: any) {
+    // Handle any authentication errors
     res.status(401).json({ error: error.message });
   }
 };
