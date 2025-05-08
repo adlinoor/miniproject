@@ -6,9 +6,11 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+// Function to generate JWT token
 const generateToken = (userId: number) => {
   return jwt.sign({ id: userId }, process.env.SECRET_KEY!);
 };
+
 // Validation schemas
 export const registerSchema = z.object({
   first_name: z.string().min(1, "First name is required"),
@@ -28,11 +30,14 @@ export const loginSchema = z.object({
  */
 export const register = async (req: Request, res: Response) => {
   try {
-    // Validate the incoming request body using the updated schema
+    // Validate the incoming request body
     const validatedData = registerSchema.parse(req.body);
 
-    // Pass validated data to RegisterService
-    const user = await authService.RegisterService(validatedData);
+    // Pass validated data along with correct role (uppercase) to RegisterService
+    const user = await authService.RegisterService({
+      ...validatedData,
+      role: validatedData.role, // No need to manually set role here; it's validated in schema
+    });
 
     // Generate JWT token after successful registration
     const token = generateToken(user.id);
