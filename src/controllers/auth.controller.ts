@@ -3,6 +3,7 @@ import * as authService from "../services/auth.service";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import { PrismaClient, Role } from "@prisma/client"; // Import PrismaClient and Role enum
 
 dotenv.config();
 
@@ -18,7 +19,7 @@ export const registerSchema = z.object({
   last_name: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email format"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.enum(["CUSTOMER", "ORGANIZER"]).default("CUSTOMER"), // Role is optional and defaults to "CUSTOMER"
+  role: z.enum([Role.CUSTOMER, Role.ORGANIZER]).default(Role.CUSTOMER), // Use Role enum here
 });
 
 export const loginSchema = z.object({
@@ -34,14 +35,14 @@ export const register = async (req: Request, res: Response) => {
     // Validate the incoming request body
     const validatedData = registerSchema.parse(req.body);
 
-    // Pass validated data along with correct role to RegisterService
+    // Pass validated data along with the correct role to RegisterService
     const user = await authService.RegisterService({
       ...validatedData,
-      role: validatedData.role, // Use the role from validated data (it defaults to "CUSTOMER")
+      role: validatedData.role, // Ensure that the role is passed as Role enum
     });
 
     // Generate JWT token after successful registration
-    const token = generateToken(user.id); // Convert user.id to string within generateToken
+    const token = generateToken(user.id);
 
     // Send response with user and token
     res.status(201).json({ user, token });
@@ -56,16 +57,10 @@ export const register = async (req: Request, res: Response) => {
  */
 export const login = async (req: Request, res: Response) => {
   try {
-    // Validate the login credentials
     const validatedData = loginSchema.parse(req.body);
-
-    // Authenticate the user and generate a token
     const { user, token } = await authService.LoginService(validatedData);
-
-    // Send response with user and token
     res.json({ user, token });
   } catch (error: any) {
-    // Handle any authentication errors
     res.status(401).json({ error: error.message });
   }
 };
