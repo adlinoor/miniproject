@@ -101,16 +101,15 @@ const gracefulShutdown = async (signal: string) => {
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 
-// Start server (only if not in test environment)
-if (process.env.NODE_ENV !== "test") {
-  app.listen(PORT, () => {
-    console.log(
-      `🚀 Server running in ${
-        process.env.NODE_ENV || "development"
-      } mode on http://localhost:${PORT}`
-    );
-  });
-}
+// Create and export the server instance
+const server = app.listen(PORT, () => {
+  console.log(
+    `🚀 Server running in ${
+      process.env.NODE_ENV || "development"
+    } mode on http://localhost:${PORT}`
+  );
+});
 
-// Export app for testing purposes
+// Export both app and server for different use cases
+export default server;
 export { app };
