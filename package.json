@@ -1,13 +1,13 @@
 {
   "name": "api",
   "version": "1.0.0",
-  "main": "dist/app.js",
+  "main": "src/app.ts",
   "scripts": {
-    "start": "ts-node src/app.ts",
-    "dev": "ts-node-dev src/app.ts",
-    "build": "tsc",
+    "start": "npm run build && node dist/app.js",
+    "dev": "nodemon",
+    "build": "npx tsc",
     "migrate": "prisma migrate dev",
-    "generate": "prisma generate",
+    "postinstall": "prisma generate",
     "test": "jest"
   },
   "dependencies": {
