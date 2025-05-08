@@ -5,8 +5,8 @@ import prisma from "../lib/prisma";
 import { IRegisterParam, ILoginParam } from "../interfaces/user.interface";
 
 export const RegisterService = async (param: IRegisterParam) => {
-  // Validate role first
-  if (!Object.values(Role).includes(param.role as Role)) {
+  // Add explicit type checking
+  if (!Object.values(Role).includes(param.role)) {
     throw new Error(
       `Invalid role. Must be one of: ${Object.values(Role).join(", ")}`
     );

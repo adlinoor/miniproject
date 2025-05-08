@@ -20,17 +20,12 @@ const generateToken = (user: { id: number; email: string; role: Role }) => {
   );
 };
 
-// Enhanced validation schemas
 export const registerSchema = z.object({
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email format"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z
-    .string()
-    .transform((val) => val.toUpperCase())
-    .pipe(z.nativeEnum(Role))
-    .default(Role.CUSTOMER),
+  role: z.enum([Role.CUSTOMER, Role.ORGANIZER]).default(Role.CUSTOMER),
 });
 
 export const loginSchema = z.object({
