@@ -39,8 +39,17 @@ model User {
 }
 
 enum Role {
-  customer
-  organizer
+  CUSTOMER
+  ORGANIZER
+}
+
+enum TransactionStatus {
+  WAITING_FOR_PAYMENT
+  WAITING_FOR_ADMIN_CONFIRMATION
+  DONE
+  REJECTED
+  EXPIRED
+  CANCELED
 }
 
 model Point {
@@ -129,7 +138,7 @@ model Transaction {
   user            User         @relation(fields: [userId], references: [id])
   quantity        Int
   totalPrice      Int
-  status          TransactionStatus @default(waiting_for_payment)
+  status          TransactionStatus @default(WAITING_FOR_PAYMENT)
   paymentProof    String?
   voucherCode     String?
   pointsUsed      Int           @default(0)
@@ -143,14 +152,6 @@ model Transaction {
   details        TransactionDetail[]
 }
 
-enum TransactionStatus {
-  waiting_for_payment
-  waiting_for_admin_confirmation
-  done
-  rejected
-  expired
-  canceled
-}
 
 model Review {
   id          Int         @id @default(autoincrement())

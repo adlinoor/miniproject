@@ -33,7 +33,7 @@ export const createReview = async (req: Request, res: Response) => {
       where: {
         userId,
         eventId,
-        status: TransactionStatus.done, // Using enum for type safety
+        status: TransactionStatus.DONE, // Using enum for type safety
         event: {
           endDate: { lt: new Date() }, // Event must have ended
         },

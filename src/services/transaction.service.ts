@@ -82,7 +82,7 @@ export const createTransaction = async (
         eventId,
         quantity,
         totalPrice,
-        status: TransactionStatus.waiting_for_payment,
+        status: TransactionStatus.WAITING_FOR_PAYMENT,
         expiresAt: new Date(Date.now() + PAYMENT_WINDOW_HOURS * 60 * 60 * 1000),
         voucherCode,
         pointsUsed: pointsUsed || 0,
@@ -161,15 +161,15 @@ export const updateTransactionStatus = async (
 
     // Handle status changes
     switch (status) {
-      case TransactionStatus.waiting_for_admin_confirmation:
+      case TransactionStatus.WAITING_FOR_ADMIN_CONFIRMATION:
         if (!paymentProof) throw new Error("Payment proof required");
         break;
 
-      case TransactionStatus.rejected:
-      case TransactionStatus.expired:
-      case TransactionStatus.canceled:
+      case TransactionStatus.REJECTED:
+      case TransactionStatus.EXPIRED:
+      case TransactionStatus.CANCELED:
         await restoreResources(tx, transaction);
-        if (status === TransactionStatus.rejected) {
+        if (status === TransactionStatus.REJECTED) {
           await sendEmail(
             transaction.user.email,
             "Transaction Rejected",
@@ -222,7 +222,7 @@ export const checkTransactionExpirations = async () => {
     // Expire unpaid transactions
     const unpaidExpired = await tx.transaction.findMany({
       where: {
-        status: TransactionStatus.waiting_for_payment,
+        status: TransactionStatus.WAITING_FOR_PAYMENT,
         expiresAt: { lt: now },
       },
     });
@@ -230,17 +230,17 @@ export const checkTransactionExpirations = async () => {
     // Auto-cancel unresponded transactions (using same expiresAt field)
     const unresponded = await tx.transaction.findMany({
       where: {
-        status: TransactionStatus.waiting_for_admin_confirmation,
+        status: TransactionStatus.WAITING_FOR_ADMIN_CONFIRMATION,
         expiresAt: { lt: now },
       },
     });
 
     await Promise.all([
       ...unpaidExpired.map((t) =>
-        updateTransactionStatus(t.id, TransactionStatus.expired)
+        updateTransactionStatus(t.id, TransactionStatus.EXPIRED)
       ),
       ...unresponded.map((t) =>
-        updateTransactionStatus(t.id, TransactionStatus.canceled)
+        updateTransactionStatus(t.id, TransactionStatus.CANCELED)
       ),
     ]);
   });

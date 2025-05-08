@@ -23,7 +23,7 @@ describe("Transaction Service", () => {
     userId: mockUser.id,
     quantity: 2,
     totalPrice: mockEvent.price * 2,
-    status: "waiting_for_payment" as TransactionStatus,
+    status: "WAITING_FOR_PAYMENT" as TransactionStatus,
     expiresAt: new Date(mockDate.getTime() + 2 * 60 * 60 * 1000),
     paymentProof: null,
     voucherCode: null,
@@ -166,7 +166,7 @@ describe("Transaction Service", () => {
 
       const result = await updateTransactionStatus(
         mockTransaction.id,
-        "done",
+        "DONE",
         "proof.jpg"
       );
 
@@ -183,7 +183,7 @@ describe("Transaction Service", () => {
     it("should throw error if transaction not found", async () => {
       prismaMock.transaction.findUnique.mockResolvedValue(null);
 
-      await expect(updateTransactionStatus(999, "done")).rejects.toThrow(
+      await expect(updateTransactionStatus(999, "DONE")).rejects.toThrow(
         "Transaction not found"
       );
     });

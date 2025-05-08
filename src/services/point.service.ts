@@ -105,7 +105,7 @@ export const usePoints = async (
           eventId: point.id,
           totalPrice: useAmount,
           quantity: 1,
-          status: TransactionStatus.done,
+          status: TransactionStatus.DONE,
           expiresAt: point.expiresAt,
         },
       });
