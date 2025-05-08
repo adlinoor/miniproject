@@ -26,7 +26,11 @@ export const registerSchema = z.object({
   last_name: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email format"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.nativeEnum(Role).default(Role.CUSTOMER), // Directly use Prisma enum
+  role: z
+    .string()
+    .transform((val) => val.toUpperCase())
+    .pipe(z.nativeEnum(Role))
+    .default(Role.CUSTOMER),
 });
 
 export const loginSchema = z.object({
@@ -39,7 +43,11 @@ export const loginSchema = z.object({
  */
 export const register = async (req: Request, res: Response) => {
   try {
-    const validatedData = registerSchema.parse(req.body);
+    let validatedData = registerSchema.parse(req.body);
+    validatedData = {
+      ...validatedData,
+      role: validatedData.role.toUpperCase() as Role,
+    };
 
     const user = await authService.RegisterService(validatedData);
 
