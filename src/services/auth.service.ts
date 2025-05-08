@@ -1,10 +1,17 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Role } from "@prisma/client";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import prisma from "../lib/prisma";
 import { IRegisterParam, ILoginParam } from "../interfaces/user.interface";
 
 export const RegisterService = async (param: IRegisterParam) => {
+  // Validate role first
+  if (!Object.values(Role).includes(param.role as Role)) {
+    throw new Error(
+      `Invalid role. Must be one of: ${Object.values(Role).join(", ")}`
+    );
+  }
+
   const isExist = await prisma.user.findFirst({
     where: { email: param.email },
   });
@@ -23,7 +30,7 @@ export const RegisterService = async (param: IRegisterParam) => {
       password: hashedPassword,
       first_name: param.first_name,
       last_name: param.last_name,
-      role: param.role,
+      role: param.role as Role, // Cast to ensure type safety
       isVerified: false,
       referralCode,
     },
