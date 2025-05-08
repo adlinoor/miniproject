@@ -157,7 +157,7 @@ describe("Transaction Service", () => {
     it("should update transaction status successfully", async () => {
       const updatedTransaction = {
         ...mockTransaction,
-        status: "done" as TransactionStatus,
+        status: "DONE" as TransactionStatus,
         paymentProof: "proof.jpg",
       };
 
@@ -174,7 +174,7 @@ describe("Transaction Service", () => {
       expect(prismaMock.transaction.update).toHaveBeenCalledWith({
         where: { id: mockTransaction.id },
         data: {
-          status: "done",
+          status: "DONE",
           paymentProof: "proof.jpg",
         },
       });

@@ -11,6 +11,7 @@ import {
   MOCK_ROLE,
   MOCK_JWT_TOKEN,
 } from "./mockData";
+import { prismaMock } from "./setup";
 
 jest.mock("../lib/prisma", () => ({
   user: {
@@ -102,6 +103,16 @@ describe("Auth Service", () => {
   });
 
   describe("LoginService", () => {
+    beforeEach(() => {
+      // Clear all mocks
+      jest.clearAllMocks();
+
+      // Mock JWT sign to return our mock token
+      (jwt.sign as jest.Mock).mockReturnValue(MOCK_JWT_TOKEN);
+
+      // Ensure JWT_SECRET is set
+      process.env.SECRET_KEY = "test-secret";
+    });
     it("should log in successfully with valid credentials", async () => {
       // Mocking Prisma, bcrypt, and JWT behavior
       (prisma.user.findFirst as jest.Mock).mockResolvedValue({
@@ -114,7 +125,6 @@ describe("Auth Service", () => {
         isVerified: true,
       });
       (bcrypt.compare as jest.Mock).mockResolvedValue(true); // Password matches
-      (jwt.sign as jest.Mock).mockReturnValue(MOCK_JWT_TOKEN); // Mock JWT token
 
       // Call the service
       const result = await LoginService({
@@ -138,7 +148,7 @@ describe("Auth Service", () => {
           last_name: MOCK_LAST_NAME,
           role: MOCK_ROLE,
         },
-        expect.any(String), // SECRET_KEY
+        "test-secret", // Use the actual secret from environment
         { expiresIn: "1h" }
       );
     });
