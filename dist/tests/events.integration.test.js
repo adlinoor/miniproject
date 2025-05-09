@@ -13,7 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const supertest_1 = __importDefault(require("supertest"));
-const app_1 = require("../app");
+const app_1 = __importDefault(require("../app"));
 const setup_1 = require("./setup");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const helpers_1 = require("./helpers");
@@ -47,7 +47,7 @@ describe("Event API", () => {
                 price: 10000,
                 availableSeats: 100,
             };
-            const response = yield (0, supertest_1.default)(app_1.app)
+            const response = yield (0, supertest_1.default)(app_1.default)
                 .post("/api/events")
                 .set("Authorization", mockToken)
                 .send(eventData);
@@ -62,7 +62,7 @@ describe("Event API", () => {
             jsonwebtoken_1.default.verify.mockImplementation(() => {
                 throw new Error("Invalid token");
             });
-            const response = yield (0, supertest_1.default)(app_1.app)
+            const response = yield (0, supertest_1.default)(app_1.default)
                 .post("/api/events")
                 .set("Authorization", "Bearer invalid-token")
                 .send({});
@@ -88,7 +88,7 @@ describe("Event API", () => {
                 price: 10000,
                 availableSeats: 100,
             };
-            const response = yield (0, supertest_1.default)(app_1.app)
+            const response = yield (0, supertest_1.default)(app_1.default)
                 .post("/api/events")
                 .set("Authorization", mockToken)
                 .send(eventData);
@@ -96,7 +96,7 @@ describe("Event API", () => {
             expect(setup_1.prismaMock.event.create).not.toHaveBeenCalled();
         }));
         it("should validate required fields", () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield (0, supertest_1.default)(app_1.app)
+            const response = yield (0, supertest_1.default)(app_1.default)
                 .post("/api/events")
                 .set("Authorization", mockToken)
                 .send({});
@@ -115,7 +115,7 @@ describe("Event API", () => {
                 price: "10000", // String instead of number
                 availableSeats: "100", // String instead of number
             };
-            const response = yield (0, supertest_1.default)(app_1.app)
+            const response = yield (0, supertest_1.default)(app_1.default)
                 .post("/api/events")
                 .set("Authorization", mockToken)
                 .send(invalidEventData);
@@ -134,7 +134,7 @@ describe("Event API", () => {
                 price: 10000,
                 availableSeats: 100,
             };
-            const response = yield (0, supertest_1.default)(app_1.app)
+            const response = yield (0, supertest_1.default)(app_1.default)
                 .post("/api/events")
                 .set("Authorization", mockToken)
                 .send(invalidEventData);

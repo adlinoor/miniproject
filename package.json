@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "dist/app.js",
   "scripts": {
-    "start": "npm run build && node dist/server.js",
+    "start": "npm run build && node dist/app.js",
     "dev": "nodemon",
     "build": "npx tsc",
     "migrate": "prisma migrate dev",
