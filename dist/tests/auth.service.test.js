@@ -96,6 +96,14 @@ describe("Auth Service", () => {
         }));
     });
     describe("LoginService", () => {
+        beforeEach(() => {
+            // Clear all mocks
+            jest.clearAllMocks();
+            // Mock JWT sign to return our mock token
+            jsonwebtoken_1.default.sign.mockReturnValue(mockData_1.MOCK_JWT_TOKEN);
+            // Ensure JWT_SECRET is set
+            process.env.SECRET_KEY = "test-secret";
+        });
         it("should log in successfully with valid credentials", () => __awaiter(void 0, void 0, void 0, function* () {
             // Mocking Prisma, bcrypt, and JWT behavior
             prisma_1.default.user.findFirst.mockResolvedValue({
@@ -108,7 +116,6 @@ describe("Auth Service", () => {
                 isVerified: true,
             });
             bcrypt_1.default.compare.mockResolvedValue(true); // Password matches
-            jsonwebtoken_1.default.sign.mockReturnValue(mockData_1.MOCK_JWT_TOKEN); // Mock JWT token
             // Call the service
             const result = yield (0, auth_service_1.LoginService)({
                 email: mockData_1.MOCK_EMAIL,
@@ -125,7 +132,7 @@ describe("Auth Service", () => {
                 first_name: mockData_1.MOCK_FIRST_NAME,
                 last_name: mockData_1.MOCK_LAST_NAME,
                 role: mockData_1.MOCK_ROLE,
-            }, expect.any(String), // SECRET_KEY
+            }, "test-secret", // Use the actual secret from environment
             { expiresIn: "1h" });
         }));
         it("should throw an error if email is not registered", () => __awaiter(void 0, void 0, void 0, function* () {

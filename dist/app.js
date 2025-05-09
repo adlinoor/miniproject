@@ -72,7 +72,7 @@ app.use("/api/auth", auth_routers_1.default);
 app.use("/api/events", event_routers_1.default);
 app.use("/api/reviews", review_routers_1.default);
 app.use("/api/transactions", transaction_routers_1.default);
-app.use("/api/users", user_routers_1.default);
+app.use("/api/user", user_routers_1.default);
 // Health check
 app.get("/api/health", (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {

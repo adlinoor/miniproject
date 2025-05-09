@@ -20,7 +20,7 @@ describe("Transaction Service", () => {
         userId: helpers_1.mockUser.id,
         quantity: 2,
         totalPrice: helpers_1.mockEvent.price * 2,
-        status: "waiting_for_payment",
+        status: "WAITING_FOR_PAYMENT",
         expiresAt: new Date(mockDate.getTime() + 2 * 60 * 60 * 1000),
         paymentProof: null,
         voucherCode: null,
@@ -107,22 +107,22 @@ describe("Transaction Service", () => {
     });
     describe("updateTransactionStatus", () => {
         it("should update transaction status successfully", () => __awaiter(void 0, void 0, void 0, function* () {
-            const updatedTransaction = Object.assign(Object.assign({}, mockTransaction), { status: "done", paymentProof: "proof.jpg" });
+            const updatedTransaction = Object.assign(Object.assign({}, mockTransaction), { status: "DONE", paymentProof: "proof.jpg" });
             setup_1.prismaMock.transaction.findUnique.mockResolvedValue(mockTransaction);
             setup_1.prismaMock.transaction.update.mockResolvedValue(updatedTransaction);
-            const result = yield (0, transaction_service_1.updateTransactionStatus)(mockTransaction.id, "done", "proof.jpg");
+            const result = yield (0, transaction_service_1.updateTransactionStatus)(mockTransaction.id, "DONE", "proof.jpg");
             expect(result).toEqual(updatedTransaction);
             expect(setup_1.prismaMock.transaction.update).toHaveBeenCalledWith({
                 where: { id: mockTransaction.id },
                 data: {
-                    status: "done",
+                    status: "DONE",
                     paymentProof: "proof.jpg",
                 },
             });
         }));
         it("should throw error if transaction not found", () => __awaiter(void 0, void 0, void 0, function* () {
             setup_1.prismaMock.transaction.findUnique.mockResolvedValue(null);
-            yield expect((0, transaction_service_1.updateTransactionStatus)(999, "done")).rejects.toThrow("Transaction not found");
+            yield expect((0, transaction_service_1.updateTransactionStatus)(999, "DONE")).rejects.toThrow("Transaction not found");
         }));
     });
 });

@@ -11,41 +11,53 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.validateDates = exports.validateRequest = void 0;
 const zod_1 = require("zod");
-const validateRequest = (schema) => {
-    return (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-        try {
-            yield schema.parseAsync(req.body);
-            next();
-        }
-        catch (error) {
-            if (error instanceof zod_1.ZodError) {
-                return res.status(400).json({
-                    message: "Validation failed",
-                    issues: error.issues,
-                });
-            }
-            next(error);
-        }
-    });
-};
-exports.validateRequest = validateRequest;
-const validateDates = (startDateField, endDateField) => {
-    return (req, res, next) => {
-        const startDate = new Date(req.body[startDateField]);
-        const endDate = new Date(req.body[endDateField]);
-        if (startDate >= endDate) {
+const validateRequest = (schema) => (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Validate body, query, and params
+        yield schema.parseAsync({
+            body: req.body,
+            query: req.query,
+            params: req.params,
+        });
+        next();
+    }
+    catch (error) {
+        if (error instanceof zod_1.ZodError) {
             return res.status(400).json({
+                success: false,
                 message: "Validation failed",
-                issues: [
-                    {
-                        code: "custom",
-                        path: [startDateField],
-                        message: "Start date must be before end date",
-                    },
-                ],
+                issues: error.issues.map((issue) => ({
+                    field: issue.path.join("."),
+                    message: issue.message,
+                })),
             });
         }
-        next();
-    };
+        // Pass to Express error handler
+        next(error);
+    }
+});
+exports.validateRequest = validateRequest;
+const validateDates = (startDateField, endDateField) => (req, res, next) => {
+    const startDate = new Date(req.body[startDateField]);
+    const endDate = new Date(req.body[endDateField]);
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid date format",
+        });
+    }
+    if (startDate >= endDate) {
+        return res.status(400).json({
+            success: false,
+            message: "Validation failed",
+            issues: [
+                {
+                    field: startDateField,
+                    message: "Start date must be before end date",
+                },
+            ],
+        });
+    }
+    next();
 };
 exports.validateDates = validateDates;

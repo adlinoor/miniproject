@@ -42,45 +42,23 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cloudinaryUpload = cloudinaryUpload;
-exports.extractPublicIdFromUrl = extractPublicIdFromUrl;
-exports.cloudinaryRemove = cloudinaryRemove;
-const cloudinary_1 = require("cloudinary");
-const streamifier = __importStar(require("streamifier"));
-const config_1 = require("../config");
-cloudinary_1.v2.config({
-    api_key: config_1.CLOUDINARY_KEY || "",
-    api_secret: config_1.CLOUDINARY_SECRET || "",
-    cloud_name: config_1.CLOUDINARY_NAME || "",
-});
-function cloudinaryUpload(file) {
-    return new Promise((resolve, reject) => {
-        const uploadStream = cloudinary_1.v2.uploader.upload_stream((err, res) => {
-            if (err)
-                return reject(err);
-            resolve(res);
-        });
-        streamifier.createReadStream(file.buffer).pipe(uploadStream);
-    });
-}
-function extractPublicIdFromUrl(url) {
+exports.getProfile = void 0;
+const userService = __importStar(require("../services/user.service"));
+const getProfile = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
-        const urlParts = url.split("/");
-        const publicId = urlParts[urlParts.length - 1].split(".")[0];
-        return publicId;
-    }
-    catch (err) {
-        throw err;
-    }
-}
-function cloudinaryRemove(secure_url) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const publicId = extractPublicIdFromUrl(secure_url);
-            return yield cloudinary_1.v2.uploader.destroy(publicId);
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        if (!userId) {
+            return res.status(401).json({ message: "Unauthorized" });
         }
-        catch (err) {
-            throw err;
+        const user = yield userService.getUserById(userId);
+        if (!userId) {
+            return res.status(404).json({ message: "User not found" });
         }
-    });
-}
+        res.status(200).json(user);
+    }
+    catch (error) {
+        next(error);
+    }
+});
+exports.getProfile = getProfile;

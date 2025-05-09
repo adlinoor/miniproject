@@ -79,7 +79,7 @@ const createTransaction = (userId, eventId, quantity, voucherCode, pointsUsed, t
                 eventId,
                 quantity,
                 totalPrice,
-                status: client_1.TransactionStatus.waiting_for_payment,
+                status: client_1.TransactionStatus.WAITING_FOR_PAYMENT,
                 expiresAt: new Date(Date.now() + PAYMENT_WINDOW_HOURS * 60 * 60 * 1000),
                 voucherCode,
                 pointsUsed: pointsUsed || 0,
@@ -147,15 +147,15 @@ const updateTransactionStatus = (id, status, paymentProof) => __awaiter(void 0, 
             throw new Error("Transaction not found");
         // Handle status changes
         switch (status) {
-            case client_1.TransactionStatus.waiting_for_admin_confirmation:
+            case client_1.TransactionStatus.WAITING_FOR_ADMIN_CONFIRMATION:
                 if (!paymentProof)
                     throw new Error("Payment proof required");
                 break;
-            case client_1.TransactionStatus.rejected:
-            case client_1.TransactionStatus.expired:
-            case client_1.TransactionStatus.canceled:
+            case client_1.TransactionStatus.REJECTED:
+            case client_1.TransactionStatus.EXPIRED:
+            case client_1.TransactionStatus.CANCELED:
                 yield restoreResources(tx, transaction);
-                if (status === client_1.TransactionStatus.rejected) {
+                if (status === client_1.TransactionStatus.REJECTED) {
                     yield (0, email_service_1.sendEmail)(transaction.user.email, "Transaction Rejected", `Your transaction for ${transaction.event.title} was rejected.`);
                 }
                 break;
@@ -199,20 +199,20 @@ const checkTransactionExpirations = () => __awaiter(void 0, void 0, void 0, func
         // Expire unpaid transactions
         const unpaidExpired = yield tx.transaction.findMany({
             where: {
-                status: client_1.TransactionStatus.waiting_for_payment,
+                status: client_1.TransactionStatus.WAITING_FOR_PAYMENT,
                 expiresAt: { lt: now },
             },
         });
         // Auto-cancel unresponded transactions (using same expiresAt field)
         const unresponded = yield tx.transaction.findMany({
             where: {
-                status: client_1.TransactionStatus.waiting_for_admin_confirmation,
+                status: client_1.TransactionStatus.WAITING_FOR_ADMIN_CONFIRMATION,
                 expiresAt: { lt: now },
             },
         });
         yield Promise.all([
-            ...unpaidExpired.map((t) => (0, exports.updateTransactionStatus)(t.id, client_1.TransactionStatus.expired)),
-            ...unresponded.map((t) => (0, exports.updateTransactionStatus)(t.id, client_1.TransactionStatus.canceled)),
+            ...unpaidExpired.map((t) => (0, exports.updateTransactionStatus)(t.id, client_1.TransactionStatus.EXPIRED)),
+            ...unresponded.map((t) => (0, exports.updateTransactionStatus)(t.id, client_1.TransactionStatus.CANCELED)),
         ]);
     }));
 });

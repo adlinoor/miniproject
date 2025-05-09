@@ -6,7 +6,7 @@ exports.mockDate = new Date();
 exports.mockUser = {
     id: 1,
     email: "organizer@example.com",
-    role: "organizer",
+    role: "ORGANIZER",
     first_name: "Test",
     last_name: "Organizer",
     password: "hashedPassword",

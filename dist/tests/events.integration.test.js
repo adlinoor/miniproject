@@ -51,6 +51,8 @@ describe("Event API", () => {
                 .post("/api/events")
                 .set("Authorization", mockToken)
                 .send(eventData);
+            // Log the response to check what went wrong
+            console.log(response.body); // Log the response body to inspect the error
             expect(response.status).toBe(201);
             expect(response.body).toHaveProperty("id");
             expect(setup_1.prismaMock.event.create).toHaveBeenCalledWith({

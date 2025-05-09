@@ -13,6 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getUserPoints = exports.refundPoints = exports.applyReferral = void 0;
+exports.getUserById = getUserById;
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const email_service_1 = require("./email.service");
 const coupon_utils_1 = require("../utils/coupon.utils");
@@ -102,3 +103,6 @@ const getUserPoints = (userId) => __awaiter(void 0, void 0, void 0, function* ()
     return points.reduce((total, point) => total + point.amount, 0);
 });
 exports.getUserPoints = getUserPoints;
+function getUserById(id) {
+    throw new Error("Function not implemented.");
+}

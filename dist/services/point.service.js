@@ -105,7 +105,7 @@ const usePoints = (userId, amount) => __awaiter(void 0, void 0, void 0, function
                     eventId: point.id,
                     totalPrice: useAmount,
                     quantity: 1,
-                    status: client_1.TransactionStatus.done,
+                    status: client_1.TransactionStatus.DONE,
                     expiresAt: point.expiresAt,
                 },
             });

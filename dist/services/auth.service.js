@@ -13,10 +13,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LoginService = exports.RegisterService = void 0;
+const client_1 = require("@prisma/client");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const RegisterService = (param) => __awaiter(void 0, void 0, void 0, function* () {
+    // Add explicit type checking
+    if (!Object.values(client_1.Role).includes(param.role)) {
+        throw new Error(`Invalid role. Must be one of: ${Object.values(client_1.Role).join(", ")}`);
+    }
     const isExist = yield prisma_1.default.user.findFirst({
         where: { email: param.email },
     });
@@ -33,7 +38,7 @@ const RegisterService = (param) => __awaiter(void 0, void 0, void 0, function* (
             password: hashedPassword,
             first_name: param.first_name,
             last_name: param.last_name,
-            role: param.role,
+            role: param.role, // Cast to ensure type safety
             isVerified: false,
             referralCode,
         },

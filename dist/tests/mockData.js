@@ -7,7 +7,7 @@ exports.MOCK_PASSWORD = "password";
 exports.MOCK_HASHED_PASSWORD = "hashedPassword";
 exports.MOCK_FIRST_NAME = "Test";
 exports.MOCK_LAST_NAME = "User";
-exports.MOCK_ROLE = "customer";
+exports.MOCK_ROLE = "CUSTOMER";
 exports.MOCK_JWT_TOKEN = "mockedToken";
 // User related mocks
 exports.MOCK_USER_ID = 1;

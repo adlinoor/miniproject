@@ -43,7 +43,7 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             where: {
                 userId,
                 eventId,
-                status: client_1.TransactionStatus.done, // Using enum for type safety
+                status: client_1.TransactionStatus.DONE, // Using enum for type safety
                 event: {
                     endDate: { lt: new Date() }, // Event must have ended
                 },
