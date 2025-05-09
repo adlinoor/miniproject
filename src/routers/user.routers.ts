@@ -1,4 +1,5 @@
 import express from "express";
+import * as userController from "../controllers/user.controller";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { upload, uploadToCloudinary } from "../services/cloudinary.service";
 import prisma from "../lib/prisma";
@@ -16,43 +17,48 @@ const profileUpdateSchema = z.object({
 /**
  * Get the authenticated user's profile.
  */
-router.get("/me", authMiddleware, async (req, res, next) => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user?.id },
-      select: {
-        id: true,
-        first_name: true,
-        last_name: true,
-        email: true,
-        role: true,
-        profilePicture: true,
-        referralCode: true,
-        points: {
-          where: {
-            expiresAt: { gt: new Date() },
+router.get(
+  "/me",
+  authMiddleware,
+  userController.getProfile,
+  async (req, res, next) => {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: req.user?.id },
+        select: {
+          id: true,
+          first_name: true,
+          last_name: true,
+          email: true,
+          role: true,
+          profilePicture: true,
+          referralCode: true,
+          points: {
+            where: {
+              expiresAt: { gt: new Date() },
+            },
+            orderBy: { expiresAt: "asc" },
           },
-          orderBy: { expiresAt: "asc" },
-        },
-        coupons: {
-          where: {
-            expiresAt: { gt: new Date() },
-            isUsed: false,
+          coupons: {
+            where: {
+              expiresAt: { gt: new Date() },
+              isUsed: false,
+            },
           },
         },
-      },
-    });
+      });
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.status(200).json(user);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      next(error);
     }
-
-    res.status(200).json(user);
-  } catch (error) {
-    console.error("Error fetching user profile:", error);
-    next(error);
   }
-});
+);
 
 /**
  * Update the authenticated user's profile.

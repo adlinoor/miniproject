@@ -68,7 +68,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/events", eventRouter);
 app.use("/api/reviews", reviewRouter);
 app.use("/api/transactions", transactionRouter);
-app.use("/api/users", userRouter);
+app.use("/api/user", userRouter);
 
 // Health check
 app.get("/api/health", async (_req, res) => {

@@ -107,3 +107,7 @@ export const getUserPoints = async (userId: number) => {
 
   return points.reduce((total, point) => total + point.amount, 0);
 };
+
+export function getUserById(id: any) {
+  throw new Error("Function not implemented.");
+}
