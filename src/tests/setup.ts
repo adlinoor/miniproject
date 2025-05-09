@@ -12,7 +12,7 @@ jest.mock("../lib/prisma", () => ({
 }));
 
 // Mock environment variables
-process.env.JWT_SECRET = "test-secret";
+process.env.SECRET_KEY = "test-secret";
 process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/testdb";
 process.env.EMAIL_USER = "test@email.com";
 process.env.EMAIL_PASS = "test-password";

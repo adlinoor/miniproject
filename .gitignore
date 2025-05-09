@@ -1,9 +1,8 @@
-# JavaScript files
-*.js
+
 
 # Dependencies
 node_modules/
-dist/
+
 
 # Environment files
 .env

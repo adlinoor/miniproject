@@ -30,7 +30,7 @@ export const register = async (req: Request, res: Response) => {
     const validatedData = registerSchema.parse(req.body);
     const user = await authService.RegisterService({
       ...validatedData,
-      role: "customer",
+      role: "CUSTOMER",
     });
     res.status(201).json(user);
   } catch (error: any) {

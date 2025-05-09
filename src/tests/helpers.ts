@@ -32,7 +32,7 @@ export const mockDate = new Date();
 export const mockUser: MockUser = {
   id: 1,
   email: "organizer@example.com",
-  role: "organizer",
+  role: "ORGANIZER",
   first_name: "Test",
   last_name: "Organizer",
   password: "hashedPassword",

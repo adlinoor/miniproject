@@ -25,7 +25,7 @@ router.get("/:id", getEventById);
 router.post(
   "/",
   authMiddleware,
-  requireRole([Role.organizer]),
+  requireRole([Role.ORGANIZER]),
   validateRequest(createEventSchema),
   validateDates("startDate", "endDate"),
   createEvent
@@ -34,7 +34,7 @@ router.post(
 router.put(
   "/:id",
   authMiddleware,
-  requireRole([Role.organizer]),
+  requireRole([Role.ORGANIZER]),
   validateRequest(updateEventSchema),
   validateDates("startDate", "endDate"),
   updateEvent
@@ -43,7 +43,7 @@ router.put(
 router.delete(
   "/:id",
   authMiddleware,
-  requireRole([Role.organizer]),
+  requireRole([Role.ORGANIZER]),
   deleteEvent
 );
 

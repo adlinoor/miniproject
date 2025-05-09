@@ -30,41 +30,43 @@ const requiredEnvVars = [
 requiredEnvVars.forEach((key) => {
   if (!process.env[key]) {
     console.error(`❌ Missing required environment variable: ${key}`);
-    process.exit(1);
+    if (process.env.NODE_ENV !== "production") {
+      // Allow Vercel build to continue, fail only locally
+      throw new Error(`Missing env: ${key}`);
+    }
   }
 });
 
 const app = express();
-const PORT = process.env.PORT || 8080;
 
 // Middleware
 app.use(cors());
 app.use(morgan("dev"));
-app.use(helmet()); // Security headers
+app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: "Too many requests from this IP, please try again later.",
 });
 app.use(limiter);
 
-// Cloudinary middleware for file uploads
+// Upload file middleware
 app.use(upload.single("file"));
 
-// Database connection
+// Connect Prisma
 prisma
   .$connect()
   .then(() => console.log("✅ Connected to PostgreSQL via Prisma"))
   .catch((err) => {
     console.error("❌ Prisma connection error:", err);
-    process.exit(1); // Exit if the database connection fails
+    if (process.env.NODE_ENV !== "production") process.exit(1);
   });
 
-// Email service initialization
+// Init mailer
 mailer.verify((error: Error | null): void => {
   if (error) {
     console.error("❌ Mailer error:", error);
@@ -79,29 +81,29 @@ app.use("/api/events", eventRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/transactions", transactionRoutes);
 
-// Health check
 app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "OK" });
 });
 
-// Error handling (must be last!)
+// Error middleware
 app.use(errorHandler);
 
-// Start server
-app.listen(PORT, () => {
-  console.log(
-    `🚀 Server running in ${
-      process.env.NODE_ENV || "development"
-    } mode on http://localhost:${PORT}`
-  );
-});
+// ONLY listen if not on Vercel
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 8080;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running at http://localhost:${PORT}`);
+  });
 
-// Graceful shutdown
-const gracefulShutdown = async (signal: string) => {
-  console.log(`🔄 Received ${signal}, shutting down gracefully...`);
-  await prisma.$disconnect();
-  process.exit();
-};
+  const gracefulShutdown = async (signal: string) => {
+    console.log(`🔄 Received ${signal}, shutting down gracefully...`);
+    await prisma.$disconnect();
+    process.exit();
+  };
 
-process.on("SIGINT", () => gracefulShutdown("SIGINT"));
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+  process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+  process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+}
+
+// Export Express app to be used by Vercel
+export default app;
