@@ -88,7 +88,7 @@ exports.loginSchema = zod_1.z.object({
 const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         let validatedData = exports.registerSchema.parse(req.body);
-        validatedData = Object.assign(Object.assign({}, validatedData), { role: validatedData.role.toUpperCase() });
+        validatedData = Object.assign({}, validatedData);
         const user = yield authService.RegisterService(validatedData);
         // Generate token with user details
         const token = generateToken({

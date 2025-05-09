@@ -41,7 +41,6 @@ export const register = async (req: Request, res: Response) => {
     let validatedData = registerSchema.parse(req.body);
     validatedData = {
       ...validatedData,
-      role: validatedData.role.toUpperCase() as Role,
     };
 
     const user = await authService.RegisterService(validatedData);
