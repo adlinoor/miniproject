@@ -27,7 +27,6 @@ const review_routers_1 = __importDefault(require("./routers/review.routers"));
 const transaction_routers_1 = __importDefault(require("./routers/transaction.routers"));
 const user_routers_1 = __importDefault(require("./routers/user.routers"));
 const cloudinary_service_1 = require("./services/cloudinary.service");
-const email_service_1 = require("./services/email.service");
 // Load environment variables
 dotenv_1.default.config();
 // Validate required env vars
@@ -93,24 +92,4 @@ app.get("/api/health", (_req, res) => __awaiter(void 0, void 0, void 0, function
 }));
 // Global error handler
 app.use(error_middleware_1.errorHandler);
-// ======================
-//    Lazy Service Init
-// ======================
-let initialized = false;
-app.use((_req, _res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    if (!initialized) {
-        try {
-            yield prisma_1.default.$connect();
-            console.log("✅ Database connected");
-            email_service_1.mailer.verify((err) => {
-                console.log(err ? `❌ Mailer error: ${err}` : "📧 Mailer ready");
-            });
-            initialized = true;
-        }
-        catch (err) {
-            console.error("❌ Initialization error:", err);
-        }
-    }
-    next();
-}));
 exports.default = app;

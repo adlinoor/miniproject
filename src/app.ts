@@ -91,27 +91,4 @@ app.get("/api/health", async (_req, res) => {
 // Global error handler
 app.use(errorHandler);
 
-// ======================
-//    Lazy Service Init
-// ======================
-let initialized = false;
-
-app.use(async (_req, _res, next) => {
-  if (!initialized) {
-    try {
-      await prisma.$connect();
-      console.log("✅ Database connected");
-
-      mailer.verify((err) => {
-        console.log(err ? `❌ Mailer error: ${err}` : "📧 Mailer ready");
-      });
-
-      initialized = true;
-    } catch (err) {
-      console.error("❌ Initialization error:", err);
-    }
-  }
-  next();
-});
-
 export default app;
