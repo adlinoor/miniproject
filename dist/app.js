@@ -59,9 +59,9 @@ app.use((0, express_rate_limit_1.rateLimit)({
     max: 100,
     message: "Too many requests, please try again later.",
 }));
-app.use((0, morgan_1.default)("dev"));
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
+app.use((0, morgan_1.default)("dev"));
 app.use((0, cookie_parser_1.default)());
 app.use(cloudinary_service_1.upload.single("file"));
 // ======================

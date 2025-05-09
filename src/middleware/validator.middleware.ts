@@ -5,12 +5,9 @@ export const validateRequest =
   (schema: AnyZodObject) =>
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Validate body, query, and params
-      await schema.parseAsync({
-        body: req.body,
-        query: req.query,
-        params: req.params,
-      });
+      // Remove the nested 'body' wrapping
+      const result = await schema.parseAsync(req.body);
+      req.body = result; // Replace body with validated data
       next();
     } catch (error) {
       if (error instanceof ZodError) {
@@ -23,7 +20,6 @@ export const validateRequest =
           })),
         });
       }
-      // Pass to Express error handler
       next(error);
     }
   };

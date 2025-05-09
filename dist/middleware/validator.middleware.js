@@ -13,12 +13,9 @@ exports.validateDates = exports.validateRequest = void 0;
 const zod_1 = require("zod");
 const validateRequest = (schema) => (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        // Validate body, query, and params
-        yield schema.parseAsync({
-            body: req.body,
-            query: req.query,
-            params: req.params,
-        });
+        // Remove the nested 'body' wrapping
+        const result = yield schema.parseAsync(req.body);
+        req.body = result; // Replace body with validated data
         next();
     }
     catch (error) {
@@ -32,7 +29,6 @@ const validateRequest = (schema) => (req, res, next) => __awaiter(void 0, void 0
                 })),
             });
         }
-        // Pass to Express error handler
         next(error);
     }
 });

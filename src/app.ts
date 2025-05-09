@@ -55,9 +55,9 @@ app.use(
     message: "Too many requests, please try again later.",
   })
 );
-app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(morgan("dev"));
 app.use(cookieParser());
 app.use(upload.single("file"));
 

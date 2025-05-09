@@ -87,16 +87,12 @@ exports.loginSchema = zod_1.z.object({
  */
 const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        let validatedData = exports.registerSchema.parse(req.body);
-        validatedData = Object.assign({}, validatedData);
-        const user = yield authService.RegisterService(validatedData);
-        // Generate token with user details
+        const user = yield authService.RegisterService(req.body);
         const token = generateToken({
             id: user.id,
             email: user.email,
             role: user.role,
         });
-        // Omit sensitive data from response
         const { password } = user, userData = __rest(user, ["password"]);
         res.status(201).json({
             user: userData,
@@ -104,12 +100,7 @@ const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         });
     }
     catch (error) {
-        if (error instanceof zod_1.z.ZodError) {
-            return res.status(400).json({
-                error: "Validation failed",
-                details: error.errors,
-            });
-        }
+        // Only handle service errors now
         res.status(400).json({
             error: error instanceof Error ? error.message : "Registration failed",
         });
