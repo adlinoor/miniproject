@@ -12,6 +12,7 @@ const router = express.Router();
 const profileUpdateSchema = z.object({
   first_name: z.string().min(1, "First name is required").optional(),
   last_name: z.string().min(1, "Last name is required").optional(),
+  profilePicture: z.string().optional(), // Optional field for profile picture URL
 });
 
 /**
@@ -49,7 +50,7 @@ router.get(
       });
 
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        return res.status(404).json({ message: "User  not found" });
       }
 
       res.status(200).json(user);
@@ -75,6 +76,7 @@ router.put(
 
       // Upload profile picture if provided
       if (req.file) {
+        // Validate file type and size here if necessary
         profilePictureUrl = await uploadToCloudinary(req.file);
       }
 

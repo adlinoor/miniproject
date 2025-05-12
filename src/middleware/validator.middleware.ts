@@ -6,25 +6,42 @@ const idSchema = z.object({
   id: z.number().int().positive().nonnegative(),
 });
 
-//  * Middleware to validate two dates in the request body.
-//  * @param startDateField - The name of the field for the start date.
-//  * @param endDateField - The name of the field for the end date.
-//  * @returns Middleware function that validates the dates.
-//  */
+export const validateRequest =
+  (schema: AnyZodObject) =>
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Remove the nested 'body' wrapping
+      const result = await schema.parseAsync(req.body);
+      req.body = result; // Replace body with validated data
+      next();
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          success: false,
+          message: "Validation failed",
+          issues: error.issues.map((issue) => ({
+            field: issue.path.join("."),
+            message: issue.message,
+          })),
+        });
+      }
+      next(error);
+    }
+  };
 
 export const validateDates =
   (startDateField: string, endDateField: string) =>
   (req: Request, res: Response, next: NextFunction) => {
     const startDate = new Date(req.body[startDateField]);
     const endDate = new Date(req.body[endDateField]);
-    // Check if the date format is valid
+
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
       return res.status(400).json({
         success: false,
         message: "Invalid date format",
       });
     }
-    // Check if the start date is before the end date
+
     if (startDate >= endDate) {
       return res.status(400).json({
         success: false,
@@ -37,5 +54,19 @@ export const validateDates =
         ],
       });
     }
-    next(); // Proceed to the next middleware
+
+    next();
   };
+
+export const validateIdParam = (paramName: string) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const id = parseInt(req.params[paramName], 10);
+    if (isNaN(id) || id <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid ${paramName}`,
+      });
+    }
+    next();
+  };
+};
