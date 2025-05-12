@@ -113,6 +113,7 @@ export const getEvents = async (req: Request, res: Response) => {
 
     const where: any = {};
 
+    // 🔍 Search
     if (search) {
       where.OR = [
         { title: { contains: search as string, mode: "insensitive" } },
@@ -120,21 +121,25 @@ export const getEvents = async (req: Request, res: Response) => {
       ];
     }
 
+    // 🔖 Filter
     if (category) where.category = { equals: category as string };
     if (location) where.location = { equals: location as string };
 
+    // 💰 Price Range
     if (minPrice || maxPrice) {
       where.price = {};
       if (minPrice) where.price.gte = parseInt(minPrice as string, 10);
       if (maxPrice) where.price.lte = parseInt(maxPrice as string, 10);
     }
 
+    // 📆 Date Range
     if (startDate || endDate) {
       where.startDate = {};
       if (startDate) where.startDate.gte = new Date(startDate as string);
       if (endDate) where.startDate.lte = new Date(endDate as string);
     }
 
+    // ↕ Sort
     const orderBy: any = {};
     if (sortBy) {
       orderBy[sortBy as string] = sortOrder as "asc" | "desc";
@@ -142,8 +147,9 @@ export const getEvents = async (req: Request, res: Response) => {
       orderBy.startDate = "asc";
     }
 
-    const pageNumber = parseInt(page as string, 10);
-    const pageSize = parseInt(limit as string, 10);
+    // 📄 Pagination
+    const pageNumber = Math.max(1, parseInt(page as string, 10) || 1);
+    const pageSize = Math.max(1, parseInt(limit as string, 10) || 10);
     const skip = (pageNumber - 1) * pageSize;
 
     const [events, total] = await Promise.all([
@@ -172,6 +178,21 @@ export const getEvents = async (req: Request, res: Response) => {
       prisma.event.count({ where }),
     ]);
 
+    // 🛑 Handling No Results
+    if (events.length === 0) {
+      return res.status(200).json({
+        data: [],
+        meta: {
+          total: 0,
+          page: pageNumber,
+          limit: pageSize,
+          totalPages: 0,
+        },
+        message: "No events found matching your criteria.",
+      });
+    }
+
+    // ✅ Response
     res.json({
       data: events,
       meta: {
@@ -231,18 +252,26 @@ export const getEventById = async (req: Request, res: Response) => {
 export const updateEvent = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const eventId = parseInt(id, 10);
+    const userId = req.user?.id;
+
+    const existing = await prisma.event.findUnique({ where: { id: eventId } });
+    if (!existing) return res.status(404).json({ message: "Event not found" });
+
+    if (existing.organizerId !== userId) {
+      return res
+        .status(403)
+        .json({ message: "Unauthorized to modify this event" });
+    }
+
     const updateData = req.body;
 
-    // Convert dates if they exist
-    if (updateData.startDate) {
+    if (updateData.startDate)
       updateData.startDate = new Date(updateData.startDate);
-    }
-    if (updateData.endDate) {
-      updateData.endDate = new Date(updateData.endDate);
-    }
+    if (updateData.endDate) updateData.endDate = new Date(updateData.endDate);
 
     const event = await prisma.event.update({
-      where: { id: parseInt(id, 10) },
+      where: { id: eventId },
       data: updateData,
     });
 
@@ -256,9 +285,20 @@ export const updateEvent = async (req: Request, res: Response) => {
 export const deleteEvent = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const eventId = parseInt(id, 10);
+    const userId = req.user?.id;
+
+    const existing = await prisma.event.findUnique({ where: { id: eventId } });
+    if (!existing) return res.status(404).json({ message: "Event not found" });
+
+    if (existing.organizerId !== userId) {
+      return res
+        .status(403)
+        .json({ message: "Unauthorized to delete this event" });
+    }
 
     await prisma.event.delete({
-      where: { id: parseInt(id, 10) },
+      where: { id: eventId },
     });
 
     res.json({ message: "Event deleted successfully" });

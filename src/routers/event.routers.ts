@@ -1,4 +1,6 @@
 import { Router } from "express";
+import { Role } from "@prisma/client";
+
 import {
   createEvent,
   getEvents,
@@ -8,20 +10,29 @@ import {
   createEventSchema,
   updateEventSchema,
 } from "../controllers/event.controller";
+
 import {
   validateRequest,
   validateDates,
+  validateIdParam,
 } from "../middleware/validator.middleware";
+
 import { authMiddleware, requireRole } from "../middleware/auth.middleware";
-import { Role } from "@prisma/client";
 
 const router = Router();
 
-// Public routes
-router.get("/", getEvents);
-router.get("/:id", getEventById);
+// ====================
+// 📂 Public Routes
+// ====================
 
-// Protected routes - Only organizers can create/update/delete events
+router.get("/", getEvents);
+
+router.get("/:id", validateIdParam("id"), getEventById);
+
+// ==============================
+// 🔒 Protected Routes (ORGANIZER)
+// ==============================
+
 router.post(
   "/",
   authMiddleware,
@@ -35,6 +46,7 @@ router.put(
   "/:id",
   authMiddleware,
   requireRole([Role.ORGANIZER]),
+  validateIdParam("id"),
   validateRequest(updateEventSchema),
   validateDates("startDate", "endDate"),
   updateEvent
@@ -44,6 +56,7 @@ router.delete(
   "/:id",
   authMiddleware,
   requireRole([Role.ORGANIZER]),
+  validateIdParam("id"),
   deleteEvent
 );
 

@@ -52,3 +52,16 @@ export const validateDates =
 
     next();
   };
+
+export const validateIdParam = (paramName: string) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const id = parseInt(req.params[paramName], 10);
+    if (isNaN(id) || id <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid ${paramName}`,
+      });
+    }
+    next();
+  };
+};
