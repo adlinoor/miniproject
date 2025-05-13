@@ -16,7 +16,6 @@ exports.getUserTransactions = exports.checkTransactionExpirations = exports.upda
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const client_1 = require("@prisma/client");
 const email_service_1 = require("./email.service");
-// Constants from requirements
 const PAYMENT_WINDOW_HOURS = 2;
 const POINT_EXPIRY_MONTHS = 3;
 const createTransaction = (userId, eventId, quantity, voucherCode, pointsUsed, ticketTypeId) => __awaiter(void 0, void 0, void 0, function* () {
@@ -49,27 +48,30 @@ const createTransaction = (userId, eventId, quantity, voucherCode, pointsUsed, t
             const ticket = event.tickets.find((t) => t.id === ticketTypeId);
             if (!ticket)
                 throw new Error("Invalid ticket type");
-            if (ticket.quantity < quantity)
+            if (ticket.quantity < quantity) {
                 throw new Error("Not enough tickets available");
+            }
             ticketPrice = ticket.price;
         }
         // 3. Calculate price with discounts
         let totalPrice = ticketPrice * quantity;
         let appliedVoucherId = null;
-        // Apply voucher if provided
         if (voucherCode) {
             const voucher = yield tx.promotion.findUnique({
                 where: { code: voucherCode, eventId },
             });
-            if (!voucher || voucher.endDate < new Date())
+            if (!voucher ||
+                voucher.endDate < new Date() ||
+                (voucher.maxUses !== null && voucher.uses >= voucher.maxUses)) {
                 throw new Error("Invalid or expired voucher");
+            }
             totalPrice = Math.max(0, totalPrice - voucher.discount);
             appliedVoucherId = voucher.id;
         }
-        // Apply points if specified
-        if (pointsUsed && pointsUsed > 0) {
-            if (pointsUsed > user.userPoints)
+        if (typeof pointsUsed === "number" && pointsUsed > 0) {
+            if (pointsUsed > user.userPoints) {
                 throw new Error("Not enough points");
+            }
             totalPrice = Math.max(0, totalPrice - pointsUsed);
         }
         // 4. Create transaction
@@ -97,28 +99,30 @@ const createTransaction = (userId, eventId, quantity, voucherCode, pointsUsed, t
             include: { event: true, user: true, details: true },
         });
         // 5. Update inventory
-        yield Promise.all([
-            tx.event.update({
-                where: { id: eventId },
-                data: { availableSeats: { decrement: quantity } },
-            }),
-            ...(ticketTypeId
-                ? [
-                    tx.ticket.update({
-                        where: { id: ticketTypeId },
-                        data: { quantity: { decrement: quantity } },
-                    }),
-                ]
-                : []),
-            ...(pointsUsed
-                ? [
-                    tx.user.update({
-                        where: { id: userId },
-                        data: { userPoints: { decrement: pointsUsed } },
-                    }),
-                ]
-                : []),
-        ]);
+        const updateOperations = [];
+        updateOperations.push(tx.event.update({
+            where: { id: eventId },
+            data: { availableSeats: { decrement: quantity } },
+        }));
+        if (ticketTypeId) {
+            updateOperations.push(tx.ticket.update({
+                where: { id: ticketTypeId },
+                data: { quantity: { decrement: quantity } },
+            }));
+        }
+        if (typeof pointsUsed === "number" && pointsUsed > 0) {
+            updateOperations.push(tx.user.update({
+                where: { id: userId },
+                data: { userPoints: { decrement: pointsUsed } },
+            }));
+        }
+        if (appliedVoucherId) {
+            updateOperations.push(tx.promotion.update({
+                where: { id: appliedVoucherId },
+                data: { uses: { increment: 1 } },
+            }));
+        }
+        yield Promise.all(updateOperations);
         return Object.assign(Object.assign({}, transaction), { paymentWindow: PAYMENT_WINDOW_HOURS, nextSteps: "Please complete payment within 2 hours" });
     }));
 });
@@ -145,7 +149,6 @@ const updateTransactionStatus = (id, status, paymentProof) => __awaiter(void 0, 
         });
         if (!transaction)
             throw new Error("Transaction not found");
-        // Handle status changes
         switch (status) {
             case client_1.TransactionStatus.WAITING_FOR_ADMIN_CONFIRMATION:
                 if (!paymentProof)
@@ -170,7 +173,6 @@ exports.updateTransactionStatus = updateTransactionStatus;
 function restoreResources(tx, transaction) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a;
-        // Restore seats/tickets
         yield Promise.all([
             tx.event.update({
                 where: { id: transaction.eventId },
@@ -181,7 +183,6 @@ function restoreResources(tx, transaction) {
                 data: { quantity: { increment: detail.quantity } },
             }))) || []),
         ]);
-        // Restore points if used
         if (transaction.pointsUsed > 0) {
             yield tx.point.create({
                 data: {
@@ -196,14 +197,12 @@ function restoreResources(tx, transaction) {
 const checkTransactionExpirations = () => __awaiter(void 0, void 0, void 0, function* () {
     const now = new Date();
     yield prisma_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
-        // Expire unpaid transactions
         const unpaidExpired = yield tx.transaction.findMany({
             where: {
                 status: client_1.TransactionStatus.WAITING_FOR_PAYMENT,
                 expiresAt: { lt: now },
             },
         });
-        // Auto-cancel unresponded transactions (using same expiresAt field)
         const unresponded = yield tx.transaction.findMany({
             where: {
                 status: client_1.TransactionStatus.WAITING_FOR_ADMIN_CONFIRMATION,

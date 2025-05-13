@@ -14,6 +14,33 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const node_cron_1 = __importDefault(require("node-cron"));
 const transaction_service_1 = require("../services/transaction.service");
+const prisma_1 = __importDefault(require("../lib/prisma"));
+node_cron_1.default.schedule("0 1 * * *", () => __awaiter(void 0, void 0, void 0, function* () {
+    const now = new Date();
+    console.log("[CRON] Running daily cleanup...");
+    try {
+        // Hapus poin yang sudah expired
+        const deletedPoints = yield prisma_1.default.point.deleteMany({
+            where: {
+                expiresAt: { lt: now },
+            },
+        });
+        // Tandai kupon yang sudah expired sebagai isUsed = true
+        const expiredCoupons = yield prisma_1.default.coupon.updateMany({
+            where: {
+                expiresAt: { lt: now },
+                isUsed: false,
+            },
+            data: {
+                isUsed: true,
+            },
+        });
+        console.log(`[CRON] Cleanup done. Deleted points: ${deletedPoints.count}, expired coupons: ${expiredCoupons.count}`);
+    }
+    catch (error) {
+        console.error("[CRON] Cleanup job failed:", error);
+    }
+}));
 // Run every 30 minutes
 node_cron_1.default.schedule("*/30 * * * *", transaction_service_1.checkTransactionExpirations);
 /**

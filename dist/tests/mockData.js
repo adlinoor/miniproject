@@ -1,36 +1,90 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MOCK_POINTS = exports.MOCK_COUPON = exports.MOCK_NEW_USER = exports.MOCK_REFERRER = exports.MOCK_REFERRAL_CODE = exports.MOCK_USER_ID = exports.MOCK_JWT_TOKEN = exports.MOCK_ROLE = exports.MOCK_LAST_NAME = exports.MOCK_FIRST_NAME = exports.MOCK_HASHED_PASSWORD = exports.MOCK_PASSWORD = exports.MOCK_EMAIL = void 0;
-// Auth related mocks
-exports.MOCK_EMAIL = "test@example.com";
-exports.MOCK_PASSWORD = "password";
-exports.MOCK_HASHED_PASSWORD = "hashedPassword";
-exports.MOCK_FIRST_NAME = "Test";
-exports.MOCK_LAST_NAME = "User";
-exports.MOCK_ROLE = "CUSTOMER";
-exports.MOCK_JWT_TOKEN = "mockedToken";
-// User related mocks
+exports.mockCoupons = exports.mockPoints = exports.mockTransactionInput = exports.MOCK_JWT_TOKEN = exports.MOCK_HASHED_PASSWORD = exports.MOCK_ROLE = exports.MOCK_LAST_NAME = exports.MOCK_FIRST_NAME = exports.MOCK_PASSWORD = exports.MOCK_EMAIL = exports.MOCK_REFERRER = exports.MOCK_REFERRAL_CODE = exports.MOCK_USER_ID = exports.mockEvent = exports.mockUser = void 0;
+const client_1 = require("@prisma/client");
+// Mock user object with all necessary fields
+exports.mockUser = {
+    id: 1,
+    first_name: "Jane",
+    last_name: "Doe",
+    email: "jane@example.com",
+    password: "secure123",
+    role: client_1.Role.CUSTOMER,
+    referralCode: "REF123456", // Referral code
+    referredBy: null, // Referrer is null for a new user
+    userPoints: 1000, // Points
+    profilePicture: null, // Profile picture
+    resetTokenExp: null, // Reset token expiration
+    isVerified: false, // Verification status
+    createdAt: new Date(), // Created timestamp
+    updatedAt: new Date(), // Updated timestamp
+    resetToken: null, // Reset token for password reset
+};
+// Mock event object with all necessary fields
+exports.mockEvent = {
+    id: 1,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    title: "Test Event",
+    description: "Test Description",
+    startDate: new Date(),
+    endDate: new Date(),
+    location: "Test Location",
+    category: "Test",
+    price: 10000,
+    availableSeats: 100,
+    organizerId: 1, // Organizer ID
+};
+// Individual values for service tests
 exports.MOCK_USER_ID = 1;
-exports.MOCK_REFERRAL_CODE = "REF-123456";
-exports.MOCK_REFERRER = {
-    id: 2,
-    email: "referrer@example.com",
-    first_name: "Referrer",
-    referralCode: exports.MOCK_REFERRAL_CODE,
+exports.MOCK_REFERRAL_CODE = "REF12345";
+exports.MOCK_REFERRER = { id: 2, referralCode: "REF12345" };
+exports.MOCK_EMAIL = exports.mockUser.email;
+exports.MOCK_PASSWORD = exports.mockUser.password;
+exports.MOCK_FIRST_NAME = exports.mockUser.first_name;
+exports.MOCK_LAST_NAME = exports.mockUser.last_name;
+exports.MOCK_ROLE = exports.mockUser.role;
+exports.MOCK_HASHED_PASSWORD = "$2b$10$hashedexample123";
+exports.MOCK_JWT_TOKEN = "mocked.jwt.token";
+// Mock transaction input for test cases
+exports.mockTransactionInput = {
+    quantity: 2,
+    pointsUsed: 0,
+    voucherCode: undefined,
 };
-exports.MOCK_NEW_USER = {
-    id: exports.MOCK_USER_ID,
-    referredBy: null,
-    first_name: "New",
-};
-exports.MOCK_COUPON = {
-    id: exports.MOCK_USER_ID,
-    code: `WELCOME-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-    discount: 10000,
-    expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 3)),
-};
-exports.MOCK_POINTS = {
-    userId: exports.MOCK_REFERRER.id,
-    amount: 10000,
-    expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 3)),
-};
+exports.mockPoints = [
+    {
+        id: 1,
+        userId: 1, // Pastikan ada userId
+        amount: 100,
+        expiresAt: new Date(Date.now() + 10000),
+        createdAt: new Date(),
+    },
+    {
+        id: 2,
+        userId: 1, // Pastikan ada userId
+        amount: 200,
+        expiresAt: new Date(Date.now() + 10000),
+        createdAt: new Date(),
+    },
+];
+exports.mockCoupons = [
+    {
+        id: "coupon1",
+        userId: 1, // Pastikan ada userId
+        code: "COUPON1",
+        discount: 10,
+        expiresAt: new Date(Date.now() + 10000),
+        isUsed: false,
+        createdAt: new Date(),
+    },
+    {
+        id: "coupon2",
+        userId: 1, // Pastikan ada userId
+        code: "COUPON2",
+        discount: 20,
+        expiresAt: new Date(Date.now() - 10000),
+        isUsed: true,
+        createdAt: new Date(),
+    },
+];

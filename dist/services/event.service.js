@@ -14,33 +14,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getOrganizerStats = exports.createPromotion = exports.getEventById = exports.getEvents = exports.createEvent = void 0;
 const prisma_1 = __importDefault(require("../lib/prisma"));
-const createEvent = (title, description, startDate, endDate, location, category, price, availableSeats, organizerId, ticketTypes) => __awaiter(void 0, void 0, void 0, function* () {
-    return yield prisma_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
-        const event = yield tx.event.create({
-            data: {
-                title,
-                description,
-                startDate,
-                endDate,
-                location,
-                category,
-                price,
-                availableSeats,
-                organizerId,
-            },
-        });
-        if (ticketTypes && ticketTypes.length > 0) {
-            yield tx.ticket.createMany({
-                data: ticketTypes.map((ticket) => ({
-                    eventId: event.id,
-                    type: ticket.type,
-                    price: ticket.price,
-                    quantity: ticket.quantity,
-                })),
-            });
-        }
-        return event;
-    }));
+const createEvent = (params) => __awaiter(void 0, void 0, void 0, function* () {
+    return yield prisma_1.default.event.create({
+        data: Object.assign({}, params),
+    });
 });
 exports.createEvent = createEvent;
 const getEvents = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (filters = {}) {

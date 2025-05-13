@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteEvent = exports.updateEvent = exports.getEventById = exports.getEvents = exports.createEvent = exports.updateEventSchema = exports.createEventSchema = void 0;
+exports.getEventAttendees = exports.deleteEvent = exports.updateEvent = exports.getEventById = exports.getEvents = exports.createEvent = exports.updateEventSchema = exports.createEventSchema = void 0;
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const zod_1 = require("zod");
 exports.createEventSchema = zod_1.z.object({
@@ -283,3 +283,58 @@ const deleteEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.deleteEvent = deleteEvent;
+const getEventAttendees = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const eventId = parseInt(req.params.id, 10);
+        const organizerId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        if (isNaN(eventId)) {
+            return res.status(400).json({ message: "Invalid event ID" });
+        }
+        const event = yield prisma_1.default.event.findUnique({
+            where: { id: eventId },
+        });
+        if (!event || event.organizerId !== organizerId) {
+            return res.status(403).json({ message: "Unauthorized" });
+        }
+        const attendees = yield prisma_1.default.transaction.findMany({
+            where: {
+                eventId,
+                status: { in: ["DONE", "WAITING_FOR_ADMIN_CONFIRMATION"] }, // hanya yang bayar
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        first_name: true,
+                        last_name: true,
+                        email: true,
+                    },
+                },
+                details: {
+                    include: {
+                        ticket: true,
+                    },
+                },
+            },
+        });
+        const formatted = attendees.map((tx) => ({
+            user: tx.user,
+            ticketTypes: tx.details.map((d) => ({
+                type: d.ticket.type,
+                quantity: d.quantity,
+                price: d.ticket.price,
+            })),
+            totalQuantity: tx.quantity,
+            totalPaid: tx.totalPrice,
+            status: tx.status,
+            paymentProof: tx.paymentProof,
+        }));
+        res.status(200).json({ attendees: formatted });
+    }
+    catch (error) {
+        console.error("Error fetching attendees:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+});
+exports.getEventAttendees = getEventAttendees;

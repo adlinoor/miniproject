@@ -52,6 +52,7 @@ const cloudinary_service_1 = require("../services/cloudinary.service");
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const validator_middleware_1 = require("../middleware/validator.middleware");
 const zod_1 = require("zod");
+const user_controller_1 = require("../controllers/user.controller");
 const router = express_1.default.Router();
 // Validation schema for profile updates
 const profileUpdateSchema = zod_1.z.object({
@@ -62,7 +63,7 @@ const profileUpdateSchema = zod_1.z.object({
 /**
  * Get the authenticated user's profile.
  */
-router.get("/me", auth_middleware_1.authMiddleware, userController.getProfile, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+router.get("/me", auth_middleware_1.authenticate, userController.getProfile, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
         const user = yield prisma_1.default.user.findUnique({
@@ -99,10 +100,11 @@ router.get("/me", auth_middleware_1.authMiddleware, userController.getProfile, (
         next(error);
     }
 }));
+router.get("/rewards", auth_middleware_1.authenticate, user_controller_1.getRewardSummary);
 /**
  * Update the authenticated user's profile.
  */
-router.put("/profile", auth_middleware_1.authMiddleware, cloudinary_service_1.upload.single("profilePicture"), (0, validator_middleware_1.validateRequest)(profileUpdateSchema), (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+router.put("/profile", auth_middleware_1.authenticate, cloudinary_service_1.upload.single("profilePicture"), (0, validator_middleware_1.validateRequest)(profileUpdateSchema), (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { first_name, last_name } = req.body;
         let profilePictureUrl;

@@ -16,27 +16,26 @@ const supertest_1 = __importDefault(require("supertest"));
 const app_1 = __importDefault(require("../app"));
 const setup_1 = require("./setup");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const helpers_1 = require("./helpers");
+const mockData_1 = require("./mockData");
 describe("Event API", () => {
     const mockToken = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mockToken";
     beforeEach(() => {
         jest.clearAllMocks();
         // Mock JWT verify
         jsonwebtoken_1.default.verify.mockImplementation(() => ({
-            id: helpers_1.mockUser.id,
-            role: helpers_1.mockUser.role,
-            email: helpers_1.mockUser.email,
-            first_name: helpers_1.mockUser.first_name,
-            last_name: helpers_1.mockUser.last_name,
+            id: mockData_1.mockUser.id,
+            role: mockData_1.mockUser.role,
+            email: mockData_1.mockUser.email,
+            first_name: mockData_1.mockUser.first_name,
+            last_name: mockData_1.mockUser.last_name,
         }));
-        // Mock Prisma user find
-        setup_1.prismaMock.user.findUnique.mockResolvedValue(helpers_1.mockUser);
+        // Mock Prisma user create
+        setup_1.prismaMock.user.create.mockResolvedValue(mockData_1.mockUser);
         // Mock event creation
-        setup_1.prismaMock.event.create.mockResolvedValue(helpers_1.mockEvent);
+        setup_1.prismaMock.event.create.mockResolvedValue(mockData_1.mockEvent);
     });
     describe("POST /api/events", () => {
         it("should create a new event", () => __awaiter(void 0, void 0, void 0, function* () {
-            // Create event data matching Zod schema requirements
             const eventData = {
                 title: "Test Event",
                 description: "Test Description",
@@ -51,12 +50,11 @@ describe("Event API", () => {
                 .post("/api/events")
                 .set("Authorization", mockToken)
                 .send(eventData);
-            // Log the response to check what went wrong
             console.log(response.body); // Log the response body to inspect the error
             expect(response.status).toBe(201);
             expect(response.body).toHaveProperty("id");
             expect(setup_1.prismaMock.event.create).toHaveBeenCalledWith({
-                data: Object.assign(Object.assign({}, eventData), { startDate: expect.any(Date), endDate: expect.any(Date), organizerId: helpers_1.mockUser.id }),
+                data: Object.assign(Object.assign({}, eventData), { startDate: expect.any(Date), endDate: expect.any(Date), organizerId: mockData_1.mockUser.id }),
             });
         }));
         it("should reject unauthorized access", () => __awaiter(void 0, void 0, void 0, function* () {
@@ -68,11 +66,12 @@ describe("Event API", () => {
                 .post("/api/events")
                 .set("Authorization", "Bearer invalid-token")
                 .send({});
+            // Assert unauthorized error response
             expect(response.status).toBe(401);
             expect(setup_1.prismaMock.event.create).not.toHaveBeenCalled();
         }));
         it("should reject non-organizer users", () => __awaiter(void 0, void 0, void 0, function* () {
-            // Mock regular user
+            // Mock regular user role
             jsonwebtoken_1.default.verify.mockImplementation(() => ({
                 id: 2,
                 role: "customer",
@@ -94,6 +93,7 @@ describe("Event API", () => {
                 .post("/api/events")
                 .set("Authorization", mockToken)
                 .send(eventData);
+            // Assert forbidden error response
             expect(response.status).toBe(403);
             expect(setup_1.prismaMock.event.create).not.toHaveBeenCalled();
         }));
@@ -102,6 +102,7 @@ describe("Event API", () => {
                 .post("/api/events")
                 .set("Authorization", mockToken)
                 .send({});
+            // Assert bad request response due to missing required fields
             expect(response.status).toBe(400);
             expect(response.body).toHaveProperty("issues");
             expect(setup_1.prismaMock.event.create).not.toHaveBeenCalled();
@@ -121,6 +122,7 @@ describe("Event API", () => {
                 .post("/api/events")
                 .set("Authorization", mockToken)
                 .send(invalidEventData);
+            // Assert bad request response due to incorrect data types
             expect(response.status).toBe(400);
             expect(response.body).toHaveProperty("issues");
             expect(setup_1.prismaMock.event.create).not.toHaveBeenCalled();
@@ -140,12 +142,13 @@ describe("Event API", () => {
                 .post("/api/events")
                 .set("Authorization", mockToken)
                 .send(invalidEventData);
+            // Assert bad request response due to invalid date range
             expect(response.status).toBe(400);
             expect(response.body).toHaveProperty("issues");
             expect(setup_1.prismaMock.event.create).not.toHaveBeenCalled();
         }));
     });
     afterAll(() => __awaiter(void 0, void 0, void 0, function* () {
-        // Add any cleanup if needed
+        // Cleanup if needed (not mandatory in this case)
     }));
 });

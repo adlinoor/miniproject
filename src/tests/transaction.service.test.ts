@@ -1,191 +1,111 @@
-import {
-  createTransaction,
-  getTransaction,
-  updateTransactionStatus,
-} from "../services/transaction.service";
-import { prismaMock } from "./setup";
-import { Prisma, TransactionStatus } from "@prisma/client";
-import { mockEvent, mockUser } from "./helpers";
+import prisma from "../lib/prisma";
+import { createTransaction } from "../services/transaction.service";
+import { Role, TransactionStatus } from "@prisma/client";
+import "../setup";
+import { mockEvent, mockUser } from "./mockData";
 
-type TransactionWithDetails = Prisma.TransactionGetPayload<{
-  include: {
-    event: true;
-    user: { select: { email: true; first_name: true; last_name: true } };
-    details: { include: { ticket: true } };
-  };
-}>;
+describe("💳 Transaction Service", () => {
+  let userId: number;
+  let eventId: number;
+  let ticketId: number;
 
-describe("Transaction Service", () => {
-  const mockDate = new Date();
-  const mockTransaction = {
-    id: 1,
-    eventId: mockEvent.id,
-    userId: mockUser.id,
-    quantity: 2,
-    totalPrice: mockEvent.price * 2,
-    status: "WAITING_FOR_PAYMENT" as TransactionStatus,
-    expiresAt: new Date(mockDate.getTime() + 2 * 60 * 60 * 1000),
-    paymentProof: null,
-    voucherCode: null,
-    pointsUsed: 0,
-    createdAt: mockDate,
-    updatedAt: mockDate,
-    event: mockEvent,
-    user: {
-      id: mockUser.id,
-      email: mockUser.email,
-      first_name: mockUser.first_name,
-      last_name: mockUser.last_name,
-    },
-    details: [],
-    nextSteps: "Please complete payment within 2 hours",
-    paymentWindow: 2,
-  };
+  beforeEach(async () => {
+    const user = await prisma.user.create({
+      data: { ...mockUser, userPoints: 20000 },
+    });
+    userId = user.id;
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    prismaMock.user.findUnique.mockResolvedValue(mockUser);
+    const event = await prisma.event.create({
+      data: { ...mockEvent, organizerId: userId },
+    });
+    eventId = event.id;
+
+    const ticket = await prisma.ticket.create({
+      data: {
+        eventId,
+        type: "VIP",
+        price: 50000,
+        quantity: 10,
+      },
+    });
+    ticketId = ticket.id;
   });
 
-  describe("createTransaction", () => {
-    it("should create a transaction successfully", async () => {
-      prismaMock.event.findUnique.mockResolvedValue({
-        ...mockEvent,
-        availableSeats: 10,
-      });
+  it("✅ should create transaction with valid ticket & no discount", async () => {
+    const tx = await createTransaction(
+      userId,
+      eventId,
+      2,
+      undefined,
+      0,
+      ticketId
+    );
 
-      prismaMock.transaction.create.mockResolvedValue(mockTransaction);
-      prismaMock.event.update.mockResolvedValue({
-        ...mockEvent,
-        availableSeats: 8,
-      });
-
-      (prismaMock.$transaction as jest.Mock).mockImplementation(
-        async (callback) => {
-          return callback(prismaMock);
-        }
-      );
-
-      const result = await createTransaction(mockUser.id, mockEvent.id, 2);
-
-      expect(result).toEqual(mockTransaction);
-      expect(prismaMock.event.update).toHaveBeenCalledWith({
-        where: { id: mockEvent.id },
-        data: { availableSeats: { decrement: 2 } }, // Changed to match actual implementation
-      });
-    });
-
-    it("should throw error if event not found", async () => {
-      prismaMock.event.findUnique.mockResolvedValue(null);
-      (prismaMock.$transaction as jest.Mock).mockImplementation((callback) =>
-        callback(prismaMock)
-      );
-
-      await expect(createTransaction(mockUser.id, 999, 2)).rejects.toThrow(
-        "Event not found"
-      );
-      expect(prismaMock.event.update).not.toHaveBeenCalled();
-    });
-
-    it("should throw error if not enough seats", async () => {
-      prismaMock.event.findUnique.mockResolvedValue({
-        ...mockEvent,
-        availableSeats: 1,
-      });
-      (prismaMock.$transaction as jest.Mock).mockImplementation((callback) =>
-        callback(prismaMock)
-      );
-
-      await expect(
-        createTransaction(mockUser.id, mockEvent.id, 2)
-      ).rejects.toThrow("Not enough available seats for this event");
-      expect(prismaMock.event.update).not.toHaveBeenCalled();
-    });
+    expect(tx).toHaveProperty("totalPrice", 100000);
+    expect(tx.status).toBe(TransactionStatus.WAITING_FOR_PAYMENT);
   });
 
-  describe("getTransaction", () => {
-    it("should return transaction with event and user details", async () => {
-      const mockTransactionWithDetails = {
-        ...mockTransaction,
-        event: mockEvent,
-        user: {
-          id: mockUser.id,
-          email: mockUser.email,
-          first_name: mockUser.first_name,
-          last_name: mockUser.last_name,
-        },
-        details: [],
-      };
-
-      prismaMock.transaction.findUnique.mockResolvedValue(
-        mockTransactionWithDetails
-      );
-
-      const result = await getTransaction(mockTransaction.id);
-
-      expect(result).toEqual(mockTransactionWithDetails);
-      expect(prismaMock.transaction.findUnique).toHaveBeenCalledWith({
-        where: { id: mockTransaction.id },
-        include: {
-          event: true,
-          user: {
-            select: {
-              email: true,
-              first_name: true,
-              last_name: true,
-            },
-          },
-          details: {
-            include: {
-              ticket: true,
-            },
-          },
-        },
-      });
-    });
-
-    it("should throw error if transaction not found", async () => {
-      prismaMock.transaction.findUnique.mockResolvedValue(null);
-
-      await expect(getTransaction(999)).rejects.toThrow(
-        "Transaction not found"
-      );
-    });
+  it("❌ should fail if not enough available seats", async () => {
+    await expect(
+      createTransaction(userId, eventId, 1000, undefined, 0, ticketId)
+    ).rejects.toThrow("Not enough available seats");
   });
 
-  describe("updateTransactionStatus", () => {
-    it("should update transaction status successfully", async () => {
-      const updatedTransaction = {
-        ...mockTransaction,
-        status: "DONE" as TransactionStatus,
-        paymentProof: "proof.jpg",
-      };
-
-      prismaMock.transaction.findUnique.mockResolvedValue(mockTransaction);
-      prismaMock.transaction.update.mockResolvedValue(updatedTransaction);
-
-      const result = await updateTransactionStatus(
-        mockTransaction.id,
-        "DONE",
-        "proof.jpg"
-      );
-
-      expect(result).toEqual(updatedTransaction);
-      expect(prismaMock.transaction.update).toHaveBeenCalledWith({
-        where: { id: mockTransaction.id },
-        data: {
-          status: "DONE",
-          paymentProof: "proof.jpg",
-        },
-      });
+  it("✅ should apply voucher discount", async () => {
+    const voucher = await prisma.promotion.create({
+      data: {
+        code: "DISKON50K",
+        eventId,
+        discount: 50000,
+        startDate: new Date(Date.now() - 1000),
+        endDate: new Date(Date.now() + 86400000),
+        uses: 0,
+      },
     });
 
-    it("should throw error if transaction not found", async () => {
-      prismaMock.transaction.findUnique.mockResolvedValue(null);
+    const tx = await createTransaction(
+      userId,
+      eventId,
+      2,
+      voucher.code,
+      0,
+      ticketId
+    );
+    expect(tx.totalPrice).toBe(50000); // 100k - 50k
+  });
 
-      await expect(updateTransactionStatus(999, "DONE")).rejects.toThrow(
-        "Transaction not found"
-      );
+  it("❌ should fail with expired voucher", async () => {
+    await prisma.promotion.create({
+      data: {
+        code: "EXPIRED",
+        eventId,
+        discount: 30000,
+        startDate: new Date("2022-01-01"),
+        endDate: new Date("2022-01-02"),
+        uses: 0,
+      },
     });
+
+    await expect(
+      createTransaction(userId, eventId, 1, "EXPIRED", 0, ticketId)
+    ).rejects.toThrow("Invalid or expired voucher");
+  });
+
+  it("✅ should apply points discount", async () => {
+    const tx = await createTransaction(
+      userId,
+      eventId,
+      2,
+      undefined,
+      100000,
+      ticketId
+    );
+    expect(tx.totalPrice).toBe(0);
+  });
+
+  it("❌ should fail if not enough points", async () => {
+    await expect(
+      createTransaction(userId, eventId, 2, undefined, 999999, ticketId)
+    ).rejects.toThrow("Not enough points");
   });
 });

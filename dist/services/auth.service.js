@@ -18,7 +18,6 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const RegisterService = (param) => __awaiter(void 0, void 0, void 0, function* () {
-    // Add explicit type checking
     if (!Object.values(client_1.Role).includes(param.role)) {
         throw new Error(`Invalid role. Must be one of: ${Object.values(client_1.Role).join(", ")}`);
     }
@@ -32,17 +31,54 @@ const RegisterService = (param) => __awaiter(void 0, void 0, void 0, function* (
         .toString(36)
         .substring(2, 10)
         .toUpperCase()}`;
-    const user = yield prisma_1.default.user.create({
-        data: {
-            email: param.email,
-            password: hashedPassword,
-            first_name: param.first_name,
-            last_name: param.last_name,
-            role: param.role, // Cast to ensure type safety
-            isVerified: false,
-            referralCode,
-        },
-    });
+    let referredByUser = null;
+    if (param.referralCode) {
+        referredByUser = yield prisma_1.default.user.findUnique({
+            where: { referralCode: param.referralCode },
+        });
+        if (!referredByUser)
+            throw new Error("Invalid referral code");
+    }
+    // Mulai transaksi
+    const user = yield prisma_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+        // Create new user
+        const newUser = yield tx.user.create({
+            data: {
+                email: param.email,
+                password: hashedPassword,
+                first_name: param.first_name,
+                last_name: param.last_name,
+                role: param.role,
+                isVerified: false,
+                referralCode,
+                referredBy: (referredByUser === null || referredByUser === void 0 ? void 0 : referredByUser.referralCode) || null,
+            },
+        });
+        // Jika referral valid, beri reward ke referrer
+        if (referredByUser) {
+            // Tambahkan point
+            yield tx.point.create({
+                data: {
+                    userId: referredByUser.id,
+                    amount: 10000,
+                    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90), // 3 bulan
+                },
+            });
+            // Buatkan kupon diskon untuk user baru
+            yield tx.coupon.create({
+                data: {
+                    userId: newUser.id,
+                    code: `COUP-${Math.random()
+                        .toString(36)
+                        .substring(2, 8)
+                        .toUpperCase()}`,
+                    discount: 10000,
+                    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90), // 3 bulan
+                },
+            });
+        }
+        return newUser;
+    }));
     return user;
 });
 exports.RegisterService = RegisterService;

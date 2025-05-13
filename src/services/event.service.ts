@@ -1,44 +1,23 @@
 import prisma from "../lib/prisma";
 
-export const createEvent = async (
-  title: string,
-  description: string,
-  startDate: Date,
-  endDate: Date,
-  location: string,
-  category: string,
-  price: number,
-  availableSeats: number,
-  organizerId: number,
-  ticketTypes?: { type: string; price: number; quantity: number }[]
-) => {
-  return await prisma.$transaction(async (tx) => {
-    const event = await tx.event.create({
-      data: {
-        title,
-        description,
-        startDate,
-        endDate,
-        location,
-        category,
-        price,
-        availableSeats,
-        organizerId,
-      },
-    });
+// ✅ Interface agar lebih mudah digunakan dan autocomplete-friendly
+export interface CreateEventParams {
+  title: string;
+  description: string;
+  startDate: Date;
+  endDate: Date;
+  location: string;
+  category: string;
+  price: number;
+  availableSeats: number;
+  organizerId: number;
+}
 
-    if (ticketTypes && ticketTypes.length > 0) {
-      await tx.ticket.createMany({
-        data: ticketTypes.map((ticket) => ({
-          eventId: event.id,
-          type: ticket.type,
-          price: ticket.price,
-          quantity: ticket.quantity,
-        })),
-      });
-    }
-
-    return event;
+export const createEvent = async (params: CreateEventParams) => {
+  return await prisma.event.create({
+    data: {
+      ...params,
+    },
   });
 };
 

@@ -56,21 +56,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.login = exports.register = exports.loginSchema = exports.registerSchema = void 0;
-const authService = __importStar(require("../services/auth.service"));
+exports.resetPassword = exports.forgotPassword = exports.login = exports.register = exports.loginSchema = exports.registerSchema = void 0;
 const zod_1 = require("zod");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const crypto_1 = __importDefault(require("crypto"));
+const bcrypt_1 = __importDefault(require("bcrypt"));
 const client_1 = require("@prisma/client");
+const authService = __importStar(require("../services/auth.service"));
+const email_service_1 = require("../services/email.service");
+const prisma_1 = __importDefault(require("../lib/prisma"));
 dotenv_1.default.config();
-// Token generation with enhanced type safety
-const generateToken = (user) => {
-    return jsonwebtoken_1.default.sign({
-        id: user.id,
-        email: user.email,
-        role: user.role,
-    }, process.env.SECRET_KEY, { expiresIn: "1h" });
-};
+// ====================
+// 🔐 SCHEMA VALIDATION
+// ====================
 exports.registerSchema = zod_1.z.object({
     first_name: zod_1.z.string().min(1, "First name is required"),
     last_name: zod_1.z.string().min(1, "Last name is required"),
@@ -80,11 +79,21 @@ exports.registerSchema = zod_1.z.object({
 });
 exports.loginSchema = zod_1.z.object({
     email: zod_1.z.string().email("Invalid email format"),
-    password: zod_1.z.string().min(1, "Password is required"), // Changed to min 1 for flexibility
+    password: zod_1.z.string().min(1, "Password is required"),
 });
-/**
- * Register a new user with proper error handling
- */
+// ====================
+// 🔐 JWT TOKEN HELPER
+// ====================
+const generateToken = (user) => {
+    return jsonwebtoken_1.default.sign({
+        id: user.id,
+        email: user.email,
+        role: user.role,
+    }, process.env.SECRET_KEY, { expiresIn: "1h" });
+};
+// ====================
+// 👤 REGISTER
+// ====================
 const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = yield authService.RegisterService(req.body);
@@ -100,16 +109,15 @@ const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         });
     }
     catch (error) {
-        // Only handle service errors now
         res.status(400).json({
             error: error instanceof Error ? error.message : "Registration failed",
         });
     }
 });
 exports.register = register;
-/**
- * Log in a user with enhanced security
- */
+// ====================
+// 🔓 LOGIN
+// ====================
 const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const validatedData = exports.loginSchema.parse(req.body);
@@ -126,10 +134,61 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 details: error.errors,
             });
         }
-        // Generic error message for security (don't reveal if email exists)
         res.status(401).json({
             error: "Invalid credentials",
         });
     }
 });
 exports.login = login;
+// ============================
+// 🔁 FORGOT PASSWORD - Send link
+// ============================
+const forgotPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { email } = req.body;
+    const user = yield prisma_1.default.user.findUnique({ where: { email } });
+    if (!user) {
+        return res.status(200).json({
+            message: "If your email is registered, a reset link has been sent.",
+        });
+    }
+    const token = crypto_1.default.randomBytes(32).toString("hex");
+    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    yield prisma_1.default.user.update({
+        where: { id: user.id },
+        data: {
+            resetToken: token,
+            resetTokenExp: expires,
+        },
+    });
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${token}`;
+    yield (0, email_service_1.sendEmail)(user.email, "Reset Password", `Click to reset: ${resetLink}`);
+    return res.status(200).json({ message: "Reset link sent to your email" });
+});
+exports.forgotPassword = forgotPassword;
+// ============================
+// 🔁 RESET PASSWORD - Use token
+// ============================
+const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { token } = req.params;
+    const { password } = req.body;
+    const user = yield prisma_1.default.user.findFirst({
+        where: {
+            resetToken: token,
+            resetTokenExp: { gt: new Date() },
+        },
+    });
+    if (!user) {
+        return res.status(400).json({ error: "Invalid or expired token" });
+    }
+    const hashed = yield bcrypt_1.default.hash(password, 10);
+    yield prisma_1.default.user.update({
+        where: { id: user.id },
+        data: {
+            password: hashed,
+            resetToken: null,
+            resetTokenExp: null,
+        },
+    });
+    return res.status(200).json({ message: "Password updated successfully" });
+});
+exports.resetPassword = resetPassword;
