@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authMiddleware } from "../middleware/auth.middleware";
+import { authenticate } from "../middleware/auth.middleware";
 import {
   createReview,
   getEventReviews,
@@ -8,7 +8,7 @@ import {
 const router = Router();
 
 // POST /api/reviews - Create a new review
-router.post("/", authMiddleware, createReview);
+router.post("/", authenticate, createReview);
 
 // GET /api/reviews/event/:eventId - Get reviews for an event
 router.get("/event/:eventId", getEventReviews);

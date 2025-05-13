@@ -12,3 +12,11 @@ export interface IEvent {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface CreateVoucherInput {
+  code: string;
+  discount: number;
+  startDate: Date;
+  endDate: Date;
+  eventId: string;
+}
