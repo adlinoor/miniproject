@@ -1,6 +1,6 @@
-import { prisma } from "../lib/prisma";
-import { sendEmail } from "./email.service";
-import { Promotion, Prisma } from "@prisma/client";
+import { CreateVoucherInput } from "../interfaces/event.interface";
+import prisma from "../lib/prisma";
+import { Promotion } from "@prisma/client";
 
 export const createPromotion = async (
   eventId: number,
@@ -24,7 +24,7 @@ export const createPromotion = async (
     // Create the promotion
     const promotion = await tx.promotion.create({
       data: {
-        eventId,
+        eventId: Number(eventId),
         code,
         discount,
         startDate,
@@ -71,4 +71,27 @@ export const validatePromotion = async (
   }
 
   return { valid: true, discount: promotion.discount };
+};
+
+export const createVoucher = async (data: CreateVoucherInput) => {
+  const { code, discount, startDate, endDate, eventId } = data;
+
+  const event = await prisma.event.findUnique({
+    where: { id: Number(eventId) },
+  });
+  if (!event) throw new Error("Event not found");
+
+  return prisma.promotion.create({
+    data: {
+      code,
+      discount,
+      startDate,
+      endDate,
+      eventId: Number(eventId),
+    },
+  });
+};
+
+export const getVouchersByEvent = async (eventId: string) => {
+  return prisma.promotion.findMany({ where: { eventId: Number(eventId) } });
 };
