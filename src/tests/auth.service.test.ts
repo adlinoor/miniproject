@@ -110,7 +110,7 @@ describe("Auth Service", () => {
       // Mock JWT sign to return our mock token
       (jwt.sign as jest.Mock).mockReturnValue(MOCK_JWT_TOKEN);
 
-      // Ensure JWT_SECRET is set
+      // Ensure SECRET_KEY is set
       process.env.SECRET_KEY = "test-secret";
     });
     it("should log in successfully with valid credentials", async () => {

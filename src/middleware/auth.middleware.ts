@@ -1,27 +1,22 @@
 import { Request, Response, NextFunction } from "express";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { Role } from "@prisma/client";
 import prisma from "../lib/prisma";
 import { IUserReqParam } from "../custom";
 
-// Extend Request interface to include user property
-interface AuthenticatedRequest extends Request {
-  user?: IUserReqParam;
-}
-
 export const authMiddleware = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "Token not provided" });
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.SECRET_KEY!) as JwtPayload;
+    const decoded = jwt.verify(token, process.env.SECRET_KEY!) as IUserReqParam;
 
     // Verify user exists
     const user = await prisma.user.findUnique({
@@ -29,24 +24,18 @@ export const authMiddleware = async (
     });
 
     if (!user) {
-      return res.status(401).json({ message: "User  not found" });
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
-    req.user = decoded as IUserReqParam;
+    req.user = decoded;
     next();
   } catch (error) {
-    if (error instanceof jwt.TokenExpiredError) {
-      return res.status(401).json({ message: "Token expired" });
-    }
-    if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({ message: "Invalid token" });
-    }
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(401).json({ message: "Unauthorized" });
   }
 };
 
 export const requireRole = (roles: Role[]) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
