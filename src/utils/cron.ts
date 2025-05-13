@@ -1,5 +1,37 @@
 import cron from "node-cron";
 import { checkTransactionExpirations } from "../services/transaction.service";
+import prisma from "../lib/prisma";
+
+cron.schedule("0 1 * * *", async () => {
+  const now = new Date();
+  console.log("[CRON] Running daily cleanup...");
+
+  try {
+    // Hapus poin yang sudah expired
+    const deletedPoints = await prisma.point.deleteMany({
+      where: {
+        expiresAt: { lt: now },
+      },
+    });
+
+    // Tandai kupon yang sudah expired sebagai isUsed = true
+    const expiredCoupons = await prisma.coupon.updateMany({
+      where: {
+        expiresAt: { lt: now },
+        isUsed: false,
+      },
+      data: {
+        isUsed: true,
+      },
+    });
+
+    console.log(
+      `[CRON] Cleanup done. Deleted points: ${deletedPoints.count}, expired coupons: ${expiredCoupons.count}`
+    );
+  } catch (error) {
+    console.error("[CRON] Cleanup job failed:", error);
+  }
+});
 
 // Run every 30 minutes
 cron.schedule("*/30 * * * *", checkTransactionExpirations);

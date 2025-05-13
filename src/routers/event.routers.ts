@@ -17,7 +17,7 @@ import {
   validateIdParam,
 } from "../middleware/validator.middleware";
 
-import { authMiddleware, requireRole } from "../middleware/auth.middleware";
+import { authenticate, authorizeRoles } from "../middleware/auth.middleware";
 
 const router = Router();
 
@@ -35,8 +35,8 @@ router.get("/:id", validateIdParam("id"), getEventById);
 
 router.post(
   "/",
-  authMiddleware,
-  requireRole([Role.ORGANIZER]),
+  authenticate,
+  authorizeRoles(Role.ORGANIZER),
   validateRequest(createEventSchema),
   validateDates("startDate", "endDate"),
   createEvent
@@ -44,8 +44,8 @@ router.post(
 
 router.put(
   "/:id",
-  authMiddleware,
-  requireRole([Role.ORGANIZER]),
+  authenticate,
+  authorizeRoles(Role.ORGANIZER),
   validateIdParam("id"),
   validateRequest(updateEventSchema),
   validateDates("startDate", "endDate"),
@@ -54,8 +54,8 @@ router.put(
 
 router.delete(
   "/:id",
-  authMiddleware,
-  requireRole([Role.ORGANIZER]),
+  authenticate,
+  authorizeRoles(Role.ORGANIZER),
   validateIdParam("id"),
   deleteEvent
 );
