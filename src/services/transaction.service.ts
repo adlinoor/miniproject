@@ -9,7 +9,7 @@ type TransactionWithDetails = Prisma.TransactionGetPayload<{
     details: { include: { ticket: true } };
   };
 }>;
-// Constants from requirements
+
 const PAYMENT_WINDOW_HOURS = 2;
 const POINT_EXPIRY_MONTHS = 3;
 
@@ -49,8 +49,9 @@ export const createTransaction = async (
     if (ticketTypeId) {
       const ticket = event.tickets.find((t) => t.id === ticketTypeId);
       if (!ticket) throw new Error("Invalid ticket type");
-      if (ticket.quantity < quantity)
+      if (ticket.quantity < quantity) {
         throw new Error("Not enough tickets available");
+      }
       ticketPrice = ticket.price;
     }
 
@@ -58,20 +59,27 @@ export const createTransaction = async (
     let totalPrice = ticketPrice * quantity;
     let appliedVoucherId: string | null = null;
 
-    // Apply voucher if provided
     if (voucherCode) {
       const voucher = await tx.promotion.findUnique({
         where: { code: voucherCode, eventId },
       });
-      if (!voucher || voucher.endDate < new Date())
+
+      if (
+        !voucher ||
+        voucher.endDate < new Date() ||
+        (voucher.maxUses !== null && voucher.uses >= voucher.maxUses)
+      ) {
         throw new Error("Invalid or expired voucher");
+      }
+
       totalPrice = Math.max(0, totalPrice - voucher.discount);
       appliedVoucherId = voucher.id;
     }
 
-    // Apply points if specified
-    if (pointsUsed && pointsUsed > 0) {
-      if (pointsUsed > user.userPoints) throw new Error("Not enough points");
+    if (typeof pointsUsed === "number" && pointsUsed > 0) {
+      if (pointsUsed > user.userPoints) {
+        throw new Error("Not enough points");
+      }
       totalPrice = Math.max(0, totalPrice - pointsUsed);
     }
 
@@ -101,28 +109,43 @@ export const createTransaction = async (
     });
 
     // 5. Update inventory
-    await Promise.all([
+    const updateOperations: Promise<any>[] = [];
+
+    updateOperations.push(
       tx.event.update({
         where: { id: eventId },
         data: { availableSeats: { decrement: quantity } },
-      }),
-      ...(ticketTypeId
-        ? [
-            tx.ticket.update({
-              where: { id: ticketTypeId },
-              data: { quantity: { decrement: quantity } },
-            }),
-          ]
-        : []),
-      ...(pointsUsed
-        ? [
-            tx.user.update({
-              where: { id: userId },
-              data: { userPoints: { decrement: pointsUsed } },
-            }),
-          ]
-        : []),
-    ]);
+      })
+    );
+
+    if (ticketTypeId) {
+      updateOperations.push(
+        tx.ticket.update({
+          where: { id: ticketTypeId },
+          data: { quantity: { decrement: quantity } },
+        })
+      );
+    }
+
+    if (typeof pointsUsed === "number" && pointsUsed > 0) {
+      updateOperations.push(
+        tx.user.update({
+          where: { id: userId },
+          data: { userPoints: { decrement: pointsUsed } },
+        })
+      );
+    }
+
+    if (appliedVoucherId) {
+      updateOperations.push(
+        tx.promotion.update({
+          where: { id: appliedVoucherId },
+          data: { uses: { increment: 1 } },
+        })
+      );
+    }
+
+    await Promise.all(updateOperations);
 
     return {
       ...transaction,
@@ -159,7 +182,6 @@ export const updateTransactionStatus = async (
 
     if (!transaction) throw new Error("Transaction not found");
 
-    // Handle status changes
     switch (status) {
       case TransactionStatus.WAITING_FOR_ADMIN_CONFIRMATION:
         if (!paymentProof) throw new Error("Payment proof required");
@@ -187,7 +209,6 @@ export const updateTransactionStatus = async (
 };
 
 async function restoreResources(tx: any, transaction: any) {
-  // Restore seats/tickets
   await Promise.all([
     tx.event.update({
       where: { id: transaction.eventId },
@@ -201,7 +222,6 @@ async function restoreResources(tx: any, transaction: any) {
     ) || []),
   ]);
 
-  // Restore points if used
   if (transaction.pointsUsed > 0) {
     await tx.point.create({
       data: {
@@ -219,7 +239,6 @@ export const checkTransactionExpirations = async () => {
   const now = new Date();
 
   await prisma.$transaction(async (tx) => {
-    // Expire unpaid transactions
     const unpaidExpired = await tx.transaction.findMany({
       where: {
         status: TransactionStatus.WAITING_FOR_PAYMENT,
@@ -227,7 +246,6 @@ export const checkTransactionExpirations = async () => {
       },
     });
 
-    // Auto-cancel unresponded transactions (using same expiresAt field)
     const unresponded = await tx.transaction.findMany({
       where: {
         status: TransactionStatus.WAITING_FOR_ADMIN_CONFIRMATION,

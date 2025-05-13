@@ -9,6 +9,7 @@ import {
   deleteEvent,
   createEventSchema,
   updateEventSchema,
+  getEventAttendees,
 } from "../controllers/event.controller";
 
 import {
@@ -28,6 +29,12 @@ const router = Router();
 router.get("/", getEvents);
 
 router.get("/:id", validateIdParam("id"), getEventById);
+router.get(
+  "/:id/attendees",
+  authenticate,
+  authorizeRoles("ORGANIZER"),
+  getEventAttendees
+);
 
 // ==============================
 // 🔒 Protected Routes (ORGANIZER)

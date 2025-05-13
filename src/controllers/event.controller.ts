@@ -307,3 +307,62 @@ export const deleteEvent = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const getEventAttendees = async (req: Request, res: Response) => {
+  try {
+    const eventId = parseInt(req.params.id, 10);
+    const organizerId = req.user?.id;
+
+    if (isNaN(eventId)) {
+      return res.status(400).json({ message: "Invalid event ID" });
+    }
+
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+    });
+
+    if (!event || event.organizerId !== organizerId) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const attendees = await prisma.transaction.findMany({
+      where: {
+        eventId,
+        status: { in: ["DONE", "WAITING_FOR_ADMIN_CONFIRMATION"] }, // hanya yang bayar
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            email: true,
+          },
+        },
+        details: {
+          include: {
+            ticket: true,
+          },
+        },
+      },
+    });
+
+    const formatted = attendees.map((tx) => ({
+      user: tx.user,
+      ticketTypes: tx.details.map((d) => ({
+        type: d.ticket.type,
+        quantity: d.quantity,
+        price: d.ticket.price,
+      })),
+      totalQuantity: tx.quantity,
+      totalPaid: tx.totalPrice,
+      status: tx.status,
+      paymentProof: tx.paymentProof,
+    }));
+
+    res.status(200).json({ attendees: formatted });
+  } catch (error) {
+    console.error("Error fetching attendees:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};

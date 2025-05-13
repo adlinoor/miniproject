@@ -33,6 +33,8 @@ model User {
   transactions      Transaction[]
   reviews           Review[]
   coupons           Coupon[]
+  resetToken     String?   // ⬅️ Token sementara
+  resetTokenExp  DateTime? // ⬅️ Batas waktu token valid
 
   @@index([email]) // Index for faster queries by email
   @@index([referralCode]) // Index for faster queries by referral code

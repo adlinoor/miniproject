@@ -1,10 +1,11 @@
 import express from "express";
 import * as userController from "../controllers/user.controller";
-import { authMiddleware } from "../middleware/auth.middleware";
+import { authenticate } from "../middleware/auth.middleware";
 import { upload, uploadToCloudinary } from "../services/cloudinary.service";
 import prisma from "../lib/prisma";
 import { validateRequest } from "../middleware/validator.middleware";
 import { z } from "zod";
+import { getRewardSummary } from "../controllers/user.controller";
 
 const router = express.Router();
 
@@ -20,7 +21,7 @@ const profileUpdateSchema = z.object({
  */
 router.get(
   "/me",
-  authMiddleware,
+  authenticate,
   userController.getProfile,
   async (req, res, next) => {
     try {
@@ -60,13 +61,14 @@ router.get(
     }
   }
 );
+router.get("/rewards", authenticate, getRewardSummary);
 
 /**
  * Update the authenticated user's profile.
  */
 router.put(
   "/profile",
-  authMiddleware,
+  authenticate,
   upload.single("profilePicture"),
   validateRequest(profileUpdateSchema),
   async (req, res, next) => {

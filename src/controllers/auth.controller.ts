@@ -1,13 +1,35 @@
 import { Request, Response } from "express";
-import * as authService from "../services/auth.service";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import crypto from "crypto";
+import bcrypt from "bcrypt";
 import { Role } from "@prisma/client";
+import * as authService from "../services/auth.service";
+import { sendEmail } from "../services/email.service";
+import prisma from "../lib/prisma";
 
 dotenv.config();
 
-// Token generation with enhanced type safety
+// ====================
+// 🔐 SCHEMA VALIDATION
+// ====================
+export const registerSchema = z.object({
+  first_name: z.string().min(1, "First name is required"),
+  last_name: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  role: z.enum([Role.CUSTOMER, Role.ORGANIZER]).default(Role.CUSTOMER),
+});
+
+export const loginSchema = z.object({
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(1, "Password is required"),
+});
+
+// ====================
+// 🔐 JWT TOKEN HELPER
+// ====================
 const generateToken = (user: { id: number; email: string; role: Role }) => {
   return jwt.sign(
     {
@@ -20,22 +42,9 @@ const generateToken = (user: { id: number; email: string; role: Role }) => {
   );
 };
 
-export const registerSchema = z.object({
-  first_name: z.string().min(1, "First name is required"),
-  last_name: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email format"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.enum([Role.CUSTOMER, Role.ORGANIZER]).default(Role.CUSTOMER),
-});
-
-export const loginSchema = z.object({
-  email: z.string().email("Invalid email format"),
-  password: z.string().min(1, "Password is required"), // Changed to min 1 for flexibility
-});
-
-/**
- * Register a new user with proper error handling
- */
+// ====================
+// 👤 REGISTER
+// ====================
 export const register = async (req: Request, res: Response) => {
   try {
     const user = await authService.RegisterService(req.body);
@@ -53,16 +62,15 @@ export const register = async (req: Request, res: Response) => {
       token,
     });
   } catch (error) {
-    // Only handle service errors now
     res.status(400).json({
       error: error instanceof Error ? error.message : "Registration failed",
     });
   }
 };
 
-/**
- * Log in a user with enhanced security
- */
+// ====================
+// 🔓 LOGIN
+// ====================
 export const login = async (req: Request, res: Response) => {
   try {
     const validatedData = loginSchema.parse(req.body);
@@ -81,9 +89,70 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    // Generic error message for security (don't reveal if email exists)
     res.status(401).json({
       error: "Invalid credentials",
     });
   }
+};
+
+// ============================
+// 🔁 FORGOT PASSWORD - Send link
+// ============================
+export const forgotPassword = async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    return res.status(200).json({
+      message: "If your email is registered, a reset link has been sent.",
+    });
+  }
+
+  const token = crypto.randomBytes(32).toString("hex");
+  const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      resetToken: token,
+      resetTokenExp: expires,
+    },
+  });
+
+  const resetLink = `${process.env.FRONTEND_URL}/reset-password/${token}`;
+  await sendEmail(user.email, "Reset Password", `Click to reset: ${resetLink}`);
+
+  return res.status(200).json({ message: "Reset link sent to your email" });
+};
+
+// ============================
+// 🔁 RESET PASSWORD - Use token
+// ============================
+export const resetPassword = async (req: Request, res: Response) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  const user = await prisma.user.findFirst({
+    where: {
+      resetToken: token,
+      resetTokenExp: { gt: new Date() },
+    },
+  });
+
+  if (!user) {
+    return res.status(400).json({ error: "Invalid or expired token" });
+  }
+
+  const hashed = await bcrypt.hash(password, 10);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      password: hashed,
+      resetToken: null,
+      resetTokenExp: null,
+    },
+  });
+
+  return res.status(200).json({ message: "Password updated successfully" });
 };
