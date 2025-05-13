@@ -1,6 +1,7 @@
 import http from "http";
 import app from "./app";
-import { prisma } from "./lib/prisma";
+import prisma from "./lib/prisma";
+import cron from "./utils/cron"; // ✅ pastikan cron diimport & dijalankan
 
 const PORT = process.env.PORT || 8080;
 
@@ -13,6 +14,10 @@ async function startServer() {
     console.error("❌ Database connection error:", error);
     process.exit(1);
   }
+
+  // 🕒 Jalankan scheduled cron job (poin, kupon, transaksi expired)
+  console.log("⏱️  Starting scheduled cron jobs...");
+  // (cron import cukup, jadwal langsung aktif)
 
   // Create HTTP server
   const server = http.createServer(app);
