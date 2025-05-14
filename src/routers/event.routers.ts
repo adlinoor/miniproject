@@ -10,6 +10,7 @@ import {
   createEventSchema,
   updateEventSchema,
   getEventAttendees,
+  getEventsByOrganizer,
 } from "../controllers/event.controller";
 
 import {
@@ -39,6 +40,14 @@ router.get(
 // ==============================
 // 🔒 Protected Routes (ORGANIZER)
 // ==============================
+
+// Get events owned by organizer
+router.get(
+  "/organizer/my-events",
+  authenticate,
+  authorizeRoles(Role.ORGANIZER),
+  getEventsByOrganizer
+);
 
 router.post(
   "/",

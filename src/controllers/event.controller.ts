@@ -366,3 +366,18 @@ export const getEventAttendees = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const getEventsByOrganizer = async (req: Request, res: Response) => {
+  try {
+    const organizerId = req.user?.id;
+
+    const events = await prisma.event.findMany({
+      where: { organizerId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(events);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch your events" });
+  }
+};

@@ -4,6 +4,7 @@ import {
   checkUserJoined,
   createEventTransaction,
   getMyEvents,
+  getOrganizerTransactions,
   getTransactionDetails,
   updateTransaction,
 } from "../controllers/transaction.controller";
@@ -26,6 +27,20 @@ router.get(
   authenticate,
   authorizeRoles(Role.CUSTOMER),
   getMyEvents
+);
+
+router.get(
+  "/organizer",
+  authenticate,
+  authorizeRoles(Role.ORGANIZER),
+  getOrganizerTransactions
+);
+
+router.put(
+  "/:id/status",
+  authenticate,
+  authorizeRoles(Role.ORGANIZER),
+  updateTransaction
 );
 
 router.put("/:id", authenticate, updateTransaction);

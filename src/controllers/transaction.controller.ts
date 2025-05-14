@@ -68,17 +68,31 @@ export const getTransactionDetails = async (req: Request, res: Response) => {
 export const updateTransaction = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const validatedData = transactionUpdateSchema.parse(req.body);
+    const { status, paymentProof } = req.body;
 
-    const transaction = await updateTransactionStatus(
-      parseInt(id, 10),
-      validatedData.status,
-      validatedData.paymentProof
-    );
+    const transaction = await prisma.transaction.findUnique({
+      where: { id: Number(id) },
+    });
 
-    res.json(transaction);
-  } catch (error: any) {
-    handleTransactionError(res, error);
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+
+    const updated = await prisma.transaction.update({
+      where: { id: Number(id) },
+      data: {
+        status,
+        paymentProof,
+      },
+    });
+
+    res.json({
+      message: "Transaction updated successfully",
+      transaction: updated,
+    });
+  } catch (error) {
+    console.error("Update transaction error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -140,5 +154,34 @@ export const getMyEvents = async (req: Request, res: Response) => {
     return res.json(events);
   } catch (err) {
     return res.status(500).json({ message: "Failed to fetch events" });
+  }
+};
+
+export const getOrganizerTransactions = async (req: Request, res: Response) => {
+  try {
+    const organizerId = req.user?.id;
+    if (!organizerId) return res.status(401).json({ message: "Unauthorized" });
+
+    const transactions = await prisma.transaction.findMany({
+      where: {
+        event: {
+          organizerId,
+        },
+      },
+      include: {
+        user: true,
+        event: true,
+        details: {
+          include: {
+            ticket: true,
+          },
+        },
+      },
+    });
+
+    res.json(transactions);
+  } catch (error) {
+    console.error("Error fetching organizer transactions:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
