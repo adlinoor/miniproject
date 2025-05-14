@@ -1,9 +1,10 @@
 import http from "http";
 import app from "./app";
 import prisma from "./lib/prisma";
-import cron from "./utils/cron"; // ✅ pastikan cron diimport & dijalankan
+import cron from "./utils/cron";
 
 const PORT = process.env.PORT || 8080;
+const ENV = process.env.NODE_ENV || "development";
 
 async function startServer() {
   // Connect to database
@@ -24,7 +25,9 @@ async function startServer() {
 
   // Start listening
   server.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+    const url = `http://localhost:${PORT}`;
+    console.log(`🚀 Server is running at ${url}`);
+    console.log(`🌐 Environment: ${ENV}`);
   });
 
   // Graceful shutdown

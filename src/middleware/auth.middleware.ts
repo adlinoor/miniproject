@@ -22,12 +22,19 @@ export const authenticate = (
   }
 
   const token = authHeader.split(" ")[1];
+  const secret = process.env.SECRET_KEY;
+
+  if (!secret) {
+    console.error("SECRET_KEY is not defined in environment variables");
+    return res.status(500).json({ message: "Server configuration error" });
+  }
 
   try {
-    const decoded = jwt.verify(token, process.env.SECRET_KEY!) as DecodedUser;
+    const decoded = jwt.verify(token, secret) as DecodedUser;
     req.user = decoded;
     next();
   } catch (err) {
+    console.error("JWT Error:", err);
     return res.status(403).json({ message: "Invalid or expired token" });
   }
 };

@@ -12,48 +12,132 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const auth_service_1 = require("../services/auth.service");
 const bcrypt_1 = __importDefault(require("bcrypt"));
-const setup_1 = require("./setup");
-const mockData_1 = require("./mockData");
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+// MOCK DATA
+const MOCK_EMAIL = "test@example.com";
+const MOCK_PASSWORD = "password123";
+const MOCK_HASHED_PASSWORD = "hashed_password";
+const MOCK_FIRST_NAME = "John";
+const MOCK_LAST_NAME = "Doe";
+const MOCK_ROLE = "CUSTOMER";
+const MOCK_JWT_TOKEN = "mocked.jwt.token";
+// 🔧 Buat mock function sekali untuk sinkronisasi
+const mockUserFindFirst = jest.fn();
+const mockUserFindUnique = jest.fn();
+const mockUserCreate = jest.fn();
+const mockPointCreate = jest.fn();
+const mockCouponCreate = jest.fn();
+// 🔧 Prisma mock sinkron di luar dan dalam transaksi
+const mockPrisma = {
+    $transaction: jest.fn((cb) => __awaiter(void 0, void 0, void 0, function* () {
+        return cb({
+            user: {
+                findFirst: mockUserFindFirst,
+                findUnique: mockUserFindUnique,
+                create: mockUserCreate,
+            },
+            point: { create: mockPointCreate },
+            coupon: { create: mockCouponCreate },
+        });
+    })),
+    user: {
+        findFirst: mockUserFindFirst,
+        findUnique: mockUserFindUnique,
+        create: mockUserCreate,
+    },
+    point: { create: mockPointCreate },
+    coupon: { create: mockCouponCreate },
+};
+// ⛔️ Harus sebelum import auth.service
+jest.mock("../lib/prisma", () => ({
+    __esModule: true,
+    default: mockPrisma,
+}));
 jest.mock("bcrypt");
-describe("🔐 Auth Service", () => {
+jest.mock("jsonwebtoken");
+const auth_service_1 = require("../services/auth.service");
+describe("Auth Service", () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        process.env.SECRET_KEY = "test-secret";
+        jest.spyOn(Math, "random").mockReturnValue(0.123456); // untuk referralCode konsisten
+    });
     describe("RegisterService", () => {
         it("should register a new user successfully", () => __awaiter(void 0, void 0, void 0, function* () {
-            bcrypt_1.default.hash.mockResolvedValue("hashed_password");
-            setup_1.prismaMock.user.findUnique
-                .mockResolvedValueOnce(null) // cek email
-                .mockResolvedValueOnce(mockData_1.mockReferrerUser); // cek referral
-            setup_1.prismaMock.user.create.mockResolvedValue(mockData_1.mockUser);
-            const result = yield (0, auth_service_1.RegisterService)(mockData_1.mockUserInput);
-            expect(result).toHaveProperty("user");
-            expect(result.email).toBe(mockData_1.mockUser.email);
+            mockUserFindFirst.mockResolvedValue(null); // email belum ada
+            bcrypt_1.default.hash.mockResolvedValue(MOCK_HASHED_PASSWORD);
+            mockUserCreate.mockResolvedValue({
+                id: 1,
+                email: MOCK_EMAIL,
+                first_name: MOCK_FIRST_NAME,
+                last_name: MOCK_LAST_NAME,
+                role: MOCK_ROLE,
+                isVerified: false,
+                referralCode: "REF-1A2B3C4D",
+            });
+            const user = yield (0, auth_service_1.RegisterService)({
+                email: MOCK_EMAIL,
+                password: MOCK_PASSWORD,
+                first_name: MOCK_FIRST_NAME,
+                last_name: MOCK_LAST_NAME,
+                role: MOCK_ROLE,
+                referralCode: undefined,
+            });
+            expect(user).toBeDefined();
+            expect(user.email).toBe(MOCK_EMAIL);
+            expect(mockUserCreate).toHaveBeenCalled();
         }));
-        it("should throw an error if email is already registered", () => __awaiter(void 0, void 0, void 0, function* () {
-            setup_1.prismaMock.user.findUnique.mockResolvedValueOnce(mockData_1.mockUser); // langsung ketemu email terdaftar
-            yield expect((0, auth_service_1.RegisterService)(mockData_1.mockUserInput)).rejects.toThrow("Email is already registered");
+        it("should throw error if email already registered", () => __awaiter(void 0, void 0, void 0, function* () {
+            mockUserFindFirst.mockResolvedValue({ id: 1 });
+            yield expect((0, auth_service_1.RegisterService)({
+                email: MOCK_EMAIL,
+                password: MOCK_PASSWORD,
+                first_name: MOCK_FIRST_NAME,
+                last_name: MOCK_LAST_NAME,
+                role: MOCK_ROLE,
+                referralCode: undefined,
+            })).rejects.toThrow("Email already registered");
         }));
     });
     describe("LoginService", () => {
-        const loginInput = {
-            email: mockData_1.mockUser.email,
-            password: "secure123",
-        };
-        it("should log in successfully with valid credentials", () => __awaiter(void 0, void 0, void 0, function* () {
-            setup_1.prismaMock.user.findUnique.mockResolvedValue(mockData_1.mockUser);
+        beforeEach(() => {
+            jsonwebtoken_1.default.sign.mockReturnValue(MOCK_JWT_TOKEN);
+        });
+        it("should login with valid credentials", () => __awaiter(void 0, void 0, void 0, function* () {
+            mockUserFindFirst.mockResolvedValue({
+                id: 1,
+                email: MOCK_EMAIL,
+                first_name: MOCK_FIRST_NAME,
+                last_name: MOCK_LAST_NAME,
+                password: MOCK_HASHED_PASSWORD,
+                role: MOCK_ROLE,
+                isVerified: true,
+            });
             bcrypt_1.default.compare.mockResolvedValue(true);
-            const result = yield (0, auth_service_1.LoginService)(loginInput);
-            expect(result).toHaveProperty("token");
-            expect(result.user.email).toBe(mockData_1.mockUser.email);
+            const result = yield (0, auth_service_1.LoginService)({
+                email: MOCK_EMAIL,
+                password: MOCK_PASSWORD,
+            });
+            expect(result.token).toBe(MOCK_JWT_TOKEN);
+            expect(result.user.email).toBe(MOCK_EMAIL);
         }));
         it("should throw error if email not found", () => __awaiter(void 0, void 0, void 0, function* () {
-            setup_1.prismaMock.user.findUnique.mockResolvedValue(null);
-            yield expect((0, auth_service_1.LoginService)(loginInput)).rejects.toThrow("Email not registered");
+            mockUserFindFirst.mockResolvedValue(null);
+            yield expect((0, auth_service_1.LoginService)({ email: "notfound@example.com", password: "abc" })).rejects.toThrow("Email not registered");
         }));
-        it("should throw error if password is incorrect", () => __awaiter(void 0, void 0, void 0, function* () {
-            setup_1.prismaMock.user.findUnique.mockResolvedValue(mockData_1.mockUser);
+        it("should throw error if password incorrect", () => __awaiter(void 0, void 0, void 0, function* () {
+            mockUserFindFirst.mockResolvedValue({
+                id: 1,
+                email: MOCK_EMAIL,
+                password: MOCK_HASHED_PASSWORD,
+                first_name: MOCK_FIRST_NAME,
+                last_name: MOCK_LAST_NAME,
+                role: MOCK_ROLE,
+                isVerified: true,
+            });
             bcrypt_1.default.compare.mockResolvedValue(false);
-            yield expect((0, auth_service_1.LoginService)(loginInput)).rejects.toThrow("Incorrect password");
+            yield expect((0, auth_service_1.LoginService)({ email: MOCK_EMAIL, password: "wrongpass" })).rejects.toThrow("Incorrect password");
         }));
     });
 });

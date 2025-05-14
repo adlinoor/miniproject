@@ -8,12 +8,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getUserRewardSummary = exports.updateUser = exports.getUserById = void 0;
-const prisma_1 = require("../lib/prisma");
+const prisma_1 = __importDefault(require("../lib/prisma"));
 // ✅ Ambil user berdasarkan ID
 const getUserById = (userId) => __awaiter(void 0, void 0, void 0, function* () {
-    return yield prisma_1.prisma.user.findUnique({
+    return yield prisma_1.default.user.findUnique({
         where: { id: userId },
         select: {
             id: true,
@@ -30,7 +33,7 @@ const getUserById = (userId) => __awaiter(void 0, void 0, void 0, function* () {
 exports.getUserById = getUserById;
 // ✅ Update user dengan validasi & upload gambar jika ada
 const updateUser = (userId, data) => __awaiter(void 0, void 0, void 0, function* () {
-    return yield prisma_1.prisma.user.update({
+    return yield prisma_1.default.user.update({
         where: { id: userId },
         data,
         select: {
@@ -49,7 +52,7 @@ exports.updateUser = updateUser;
 const getUserRewardSummary = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     const now = new Date();
     const [activePoints, coupons] = yield Promise.all([
-        prisma_1.prisma.point.findMany({
+        prisma_1.default.point.findMany({
             where: {
                 userId,
                 expiresAt: { gt: now },
@@ -60,7 +63,7 @@ const getUserRewardSummary = (userId) => __awaiter(void 0, void 0, void 0, funct
                 createdAt: true,
             },
         }),
-        prisma_1.prisma.coupon.findMany({
+        prisma_1.default.coupon.findMany({
             where: { userId },
             select: {
                 code: true,

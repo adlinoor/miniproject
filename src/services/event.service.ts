@@ -1,4 +1,4 @@
-import { prisma } from "../lib/prisma";
+import prisma from "../lib/prisma";
 
 // ✅ Interface agar lebih mudah digunakan dan autocomplete-friendly
 export interface CreateEventParams {

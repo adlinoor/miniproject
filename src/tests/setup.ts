@@ -1,6 +1,6 @@
 // src/tests/setup.ts
 import { mockDeep } from "jest-mock-extended";
-import { prisma } from "../lib/prisma";
+import prisma from "../lib/prisma";
 
 export const prismaMock = mockDeep<typeof prisma>();
 

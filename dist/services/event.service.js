@@ -8,11 +8,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getOrganizerStats = exports.createPromotion = exports.getEventById = exports.getEvents = exports.createEvent = void 0;
-const prisma_1 = require("../lib/prisma");
+const prisma_1 = __importDefault(require("../lib/prisma"));
 const createEvent = (params) => __awaiter(void 0, void 0, void 0, function* () {
-    return yield prisma_1.prisma.event.create({
+    return yield prisma_1.default.event.create({
         data: Object.assign({}, params),
     });
 });
@@ -20,7 +23,7 @@ exports.createEvent = createEvent;
 const getEvents = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (filters = {}) {
     const { category, location, search, upcomingOnly } = filters;
     const now = new Date();
-    return yield prisma_1.prisma.event.findMany({
+    return yield prisma_1.default.event.findMany({
         where: {
             AND: [
                 category ? { category } : {},
@@ -55,7 +58,7 @@ const getEvents = (...args_1) => __awaiter(void 0, [...args_1], void 0, function
 });
 exports.getEvents = getEvents;
 const getEventById = (id) => __awaiter(void 0, void 0, void 0, function* () {
-    return yield prisma_1.prisma.event.findUnique({
+    return yield prisma_1.default.event.findUnique({
         where: { id },
         include: {
             organizer: true,
@@ -77,7 +80,7 @@ const getEventById = (id) => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.getEventById = getEventById;
 const createPromotion = (eventId, code, discount, startDate, endDate, maxUses) => __awaiter(void 0, void 0, void 0, function* () {
-    return yield prisma_1.prisma.promotion.create({
+    return yield prisma_1.default.promotion.create({
         data: {
             eventId,
             code,
@@ -90,7 +93,7 @@ const createPromotion = (eventId, code, discount, startDate, endDate, maxUses) =
 });
 exports.createPromotion = createPromotion;
 const getOrganizerStats = (organizerId) => __awaiter(void 0, void 0, void 0, function* () {
-    return yield prisma_1.prisma.$queryRaw `
+    return yield prisma_1.default.$queryRaw `
     SELECT 
       DATE_TRUNC('month', created_at) AS month,
       COUNT(*) AS event_count,

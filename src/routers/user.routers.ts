@@ -2,7 +2,7 @@ import express from "express";
 import * as userController from "../controllers/user.controller";
 import { authenticate } from "../middleware/auth.middleware";
 import { upload, uploadToCloudinary } from "../services/cloudinary.service";
-import { prisma } from "../lib/prisma";
+import prisma from "../lib/prisma";
 import { validateRequest } from "../middleware/validator.middleware";
 import { z } from "zod";
 import { getRewardSummary } from "../controllers/user.controller";
@@ -26,7 +26,7 @@ router.get(
   async (req, res, next) => {
     try {
       const user = await prisma.user.findUnique({
-        where: { id: req.user.id },
+        where: { id: req.user?.id },
         select: {
           id: true,
           first_name: true,
@@ -83,7 +83,7 @@ router.put(
       }
 
       const updatedUser = await prisma.user.update({
-        where: { id: Number(req.user!.id) },
+        where: { id: Number(req.user?.id) },
         data: {
           first_name,
           last_name,

@@ -55,7 +55,7 @@ enum TransactionStatus {
 }
 
 model Point {
-  id          Int         @id @default(autoincrement())
+  id          Int          @id @default(autoincrement())
   userId      Int
   user        User         @relation(fields: [userId], references: [id])
   amount      Int
@@ -98,7 +98,7 @@ model Image {
 }
 
 model Ticket {
-  id         Int         @id @default(autoincrement())
+  id         Int          @id @default(autoincrement())
   eventId    Int
   event      Event        @relation(fields: [eventId], references: [id])
   type       String
@@ -157,11 +157,11 @@ model Transaction {
 
 model Review {
   id          Int         @id @default(autoincrement())
+  userId      Int
   eventId     Int
   event       Event        @relation(fields: [eventId], references: [id])
-  userId      Int
   user        User         @relation(fields: [userId], references: [id])
-  rating      Int
+  rating      Int          // 1–5
   comment     String?
   createdAt   DateTime     @default(now())
 
