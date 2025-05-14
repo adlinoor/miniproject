@@ -8,11 +8,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUserTransactionHistory = exports.updateTransaction = exports.getTransactionDetails = exports.createEventTransaction = exports.transactionUpdateSchema = exports.transactionSchema = void 0;
+exports.getOrganizerTransactions = exports.getMyEvents = exports.checkUserJoined = exports.getUserTransactionHistory = exports.updateTransaction = exports.getTransactionDetails = exports.createEventTransaction = exports.transactionUpdateSchema = exports.transactionSchema = void 0;
 const transaction_service_1 = require("../services/transaction.service");
 const client_1 = require("@prisma/client");
 const zod_1 = require("zod");
+const prisma_1 = __importDefault(require("../lib/prisma"));
 exports.transactionSchema = zod_1.z.object({
     eventId: zod_1.z.number().min(1),
     quantity: zod_1.z.number().min(1),
@@ -57,12 +61,28 @@ exports.getTransactionDetails = getTransactionDetails;
 const updateTransaction = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
-        const validatedData = exports.transactionUpdateSchema.parse(req.body);
-        const transaction = yield (0, transaction_service_1.updateTransactionStatus)(parseInt(id, 10), validatedData.status, validatedData.paymentProof);
-        res.json(transaction);
+        const { status, paymentProof } = req.body;
+        const transaction = yield prisma_1.default.transaction.findUnique({
+            where: { id: Number(id) },
+        });
+        if (!transaction) {
+            return res.status(404).json({ message: "Transaction not found" });
+        }
+        const updated = yield prisma_1.default.transaction.update({
+            where: { id: Number(id) },
+            data: {
+                status,
+                paymentProof,
+            },
+        });
+        res.json({
+            message: "Transaction updated successfully",
+            transaction: updated,
+        });
     }
     catch (error) {
-        handleTransactionError(res, error);
+        console.error("Update transaction error:", error);
+        res.status(500).json({ message: "Internal server error" });
     }
 });
 exports.updateTransaction = updateTransaction;
@@ -92,3 +112,59 @@ function handleTransactionError(res, error) {
                 : 400;
     res.status(statusCode).json(Object.assign({ error: error.message || "Transaction operation failed" }, (error instanceof zod_1.z.ZodError && { details: error.errors })));
 }
+const checkUserJoined = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    const eventId = Number(req.query.eventId);
+    const existing = yield prisma_1.default.transaction.findFirst({
+        where: { userId, eventId },
+    });
+    res.json({ joined: !!existing });
+});
+exports.checkUserJoined = checkUserJoined;
+const getMyEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        const transactions = yield prisma_1.default.transaction.findMany({
+            where: { userId },
+            include: { event: true },
+        });
+        const events = transactions.map((t) => t.event);
+        return res.json(events);
+    }
+    catch (err) {
+        return res.status(500).json({ message: "Failed to fetch events" });
+    }
+});
+exports.getMyEvents = getMyEvents;
+const getOrganizerTransactions = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const organizerId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        if (!organizerId)
+            return res.status(401).json({ message: "Unauthorized" });
+        const transactions = yield prisma_1.default.transaction.findMany({
+            where: {
+                event: {
+                    organizerId,
+                },
+            },
+            include: {
+                user: true,
+                event: true,
+                details: {
+                    include: {
+                        ticket: true,
+                    },
+                },
+            },
+        });
+        res.json(transactions);
+    }
+    catch (error) {
+        console.error("Error fetching organizer transactions:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+});
+exports.getOrganizerTransactions = getOrganizerTransactions;

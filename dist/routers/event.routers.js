@@ -15,6 +15,8 @@ router.get("/:id/attendees", auth_middleware_1.authenticate, (0, auth_middleware
 // ==============================
 // 🔒 Protected Routes (ORGANIZER)
 // ==============================
+// Get events owned by organizer
+router.get("/organizer/my-events", auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeRoles)(client_1.Role.ORGANIZER), event_controller_1.getEventsByOrganizer);
 router.post("/", auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeRoles)(client_1.Role.ORGANIZER), (0, validator_middleware_1.validateRequest)(event_controller_1.createEventSchema), (0, validator_middleware_1.validateDates)("startDate", "endDate"), event_controller_1.createEvent);
 router.put("/:id", auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeRoles)(client_1.Role.ORGANIZER), (0, validator_middleware_1.validateIdParam)("id"), (0, validator_middleware_1.validateRequest)(event_controller_1.updateEventSchema), (0, validator_middleware_1.validateDates)("startDate", "endDate"), event_controller_1.updateEvent);
 router.delete("/:id", auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeRoles)(client_1.Role.ORGANIZER), (0, validator_middleware_1.validateIdParam)("id"), event_controller_1.deleteEvent);

@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getEventAttendees = exports.deleteEvent = exports.updateEvent = exports.getEventById = exports.getEvents = exports.createEvent = exports.updateEventSchema = exports.createEventSchema = void 0;
+exports.getEventsByOrganizer = exports.getEventAttendees = exports.deleteEvent = exports.updateEvent = exports.getEventById = exports.getEvents = exports.createEvent = exports.updateEventSchema = exports.createEventSchema = void 0;
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const zod_1 = require("zod");
 exports.createEventSchema = zod_1.z.object({
@@ -338,3 +338,18 @@ const getEventAttendees = (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 exports.getEventAttendees = getEventAttendees;
+const getEventsByOrganizer = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const organizerId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        const events = yield prisma_1.default.event.findMany({
+            where: { organizerId },
+            orderBy: { createdAt: "desc" },
+        });
+        res.json(events);
+    }
+    catch (err) {
+        res.status(500).json({ message: "Failed to fetch your events" });
+    }
+});
+exports.getEventsByOrganizer = getEventsByOrganizer;
