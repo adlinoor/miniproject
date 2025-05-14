@@ -2,7 +2,10 @@ import { PrismaClient, Role } from "@prisma/client";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import prisma from "../lib/prisma";
-import { IRegisterParam, ILoginParam } from "../interfaces/user.interface";
+import {
+  IRegisterParam,
+  LoginFormValuesParam,
+} from "../interfaces/user.interface";
 
 export const RegisterService = async (param: IRegisterParam) => {
   if (!Object.values(Role).includes(param.role)) {
@@ -78,7 +81,7 @@ export const RegisterService = async (param: IRegisterParam) => {
   return user;
 };
 
-export const LoginService = async (param: ILoginParam) => {
+export const LoginService = async (param: LoginFormValuesParam) => {
   const user = await prisma.user.findFirst({
     where: { email: param.email },
   });

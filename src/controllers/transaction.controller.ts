@@ -7,6 +7,7 @@ import {
 } from "../services/transaction.service";
 import { TransactionStatus } from "@prisma/client";
 import { z } from "zod";
+import prisma from "../lib/prisma";
 
 export const transactionSchema = z.object({
   eventId: z.number().min(1),
@@ -113,3 +114,31 @@ function handleTransactionError(res: Response, error: any) {
     ...(error instanceof z.ZodError && { details: error.errors }),
   });
 }
+
+export const checkUserJoined = async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  const eventId = Number(req.query.eventId);
+
+  const existing = await prisma.transaction.findFirst({
+    where: { userId, eventId },
+  });
+
+  res.json({ joined: !!existing });
+};
+
+export const getMyEvents = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+
+    const transactions = await prisma.transaction.findMany({
+      where: { userId },
+      include: { event: true },
+    });
+
+    const events = transactions.map((t) => t.event);
+
+    return res.json(events);
+  } catch (err) {
+    return res.status(500).json({ message: "Failed to fetch events" });
+  }
+};
