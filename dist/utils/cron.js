@@ -14,19 +14,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const node_cron_1 = __importDefault(require("node-cron"));
 const transaction_service_1 = require("../services/transaction.service");
-const prisma_1 = __importDefault(require("../lib/prisma"));
+const prisma_1 = require("../lib/prisma");
 node_cron_1.default.schedule("0 1 * * *", () => __awaiter(void 0, void 0, void 0, function* () {
     const now = new Date();
     console.log("[CRON] Running daily cleanup...");
     try {
         // Hapus poin yang sudah expired
-        const deletedPoints = yield prisma_1.default.point.deleteMany({
+        const deletedPoints = yield prisma_1.prisma.point.deleteMany({
             where: {
                 expiresAt: { lt: now },
             },
         });
         // Tandai kupon yang sudah expired sebagai isUsed = true
-        const expiredCoupons = yield prisma_1.default.coupon.updateMany({
+        const expiredCoupons = yield prisma_1.prisma.coupon.updateMany({
             where: {
                 expiresAt: { lt: now },
                 isUsed: false,

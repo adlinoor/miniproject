@@ -7,7 +7,7 @@ import {
 } from "../services/transaction.service";
 import { TransactionStatus } from "@prisma/client";
 import { z } from "zod";
-import prisma from "../lib/prisma";
+import { prisma } from "../lib/prisma";
 
 export const transactionSchema = z.object({
   eventId: z.number().min(1),

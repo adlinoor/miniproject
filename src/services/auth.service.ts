@@ -1,7 +1,7 @@
 import { PrismaClient, Role } from "@prisma/client";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import prisma from "../lib/prisma";
+import { prisma } from "../lib/prisma";
 import {
   IRegisterParam,
   LoginFormValuesParam,

@@ -1,20 +1,9 @@
-import "jest";
-import prisma from "../lib/prisma";
-import { mockDeep } from "jest-mock-extended"; // Memudahkan untuk mock Prisma
+// src/tests/setup.ts
+import { mockDeep } from "jest-mock-extended";
+import { prisma } from "../lib/prisma";
 
-const prismaMock = mockDeep<typeof prisma>();
+export const prismaMock = mockDeep<typeof prisma>();
+
 jest.mock("../lib/prisma", () => ({
-  user: {
-    findUnique: jest.fn(), // Menambahkan findUnique
-    findFirst: jest.fn(),
-    create: jest.fn(),
-  },
-  point: {
-    create: jest.fn(),
-  },
-  coupon: {
-    create: jest.fn(),
-  },
+  prisma: prismaMock,
 }));
-
-export { prismaMock };

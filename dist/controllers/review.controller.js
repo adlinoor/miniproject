@@ -8,12 +8,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getEventReviews = exports.createReview = void 0;
-const prisma_1 = __importDefault(require("../lib/prisma"));
+const prisma_1 = require("../lib/prisma");
 const client_1 = require("@prisma/client");
 const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
@@ -39,7 +36,7 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             });
         }
         // 4. Check if user attended the event (with proper status)
-        const hasAttended = yield prisma_1.default.transaction.findFirst({
+        const hasAttended = yield prisma_1.prisma.transaction.findFirst({
             where: {
                 userId,
                 eventId,
@@ -56,7 +53,7 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             });
         }
         // 5. Check for existing review
-        const existingReview = yield prisma_1.default.review.findFirst({
+        const existingReview = yield prisma_1.prisma.review.findFirst({
             where: {
                 userId,
                 eventId,
@@ -69,7 +66,7 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             });
         }
         // 6. Create the review
-        const review = yield prisma_1.default.review.create({
+        const review = yield prisma_1.prisma.review.create({
             data: {
                 eventId,
                 userId,
@@ -116,7 +113,7 @@ const getEventReviews = (req, res) => __awaiter(void 0, void 0, void 0, function
                 message: "Event ID is required",
             });
         }
-        const reviews = yield prisma_1.default.review.findMany({
+        const reviews = yield prisma_1.prisma.review.findMany({
             where: { eventId: Number(eventId) },
             include: {
                 user: {

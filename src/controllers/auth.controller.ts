@@ -7,7 +7,7 @@ import bcrypt from "bcrypt";
 import { Role } from "@prisma/client";
 import * as authService from "../services/auth.service";
 import { sendEmail } from "../services/email.service";
-import prisma from "../lib/prisma";
+import { prisma } from "../lib/prisma";
 
 dotenv.config();
 

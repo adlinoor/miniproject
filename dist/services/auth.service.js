@@ -16,12 +16,12 @@ exports.LoginService = exports.RegisterService = void 0;
 const client_1 = require("@prisma/client");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const prisma_1 = __importDefault(require("../lib/prisma"));
+const prisma_1 = require("../lib/prisma");
 const RegisterService = (param) => __awaiter(void 0, void 0, void 0, function* () {
     if (!Object.values(client_1.Role).includes(param.role)) {
         throw new Error(`Invalid role. Must be one of: ${Object.values(client_1.Role).join(", ")}`);
     }
-    const isExist = yield prisma_1.default.user.findFirst({
+    const isExist = yield prisma_1.prisma.user.findFirst({
         where: { email: param.email },
     });
     if (isExist)
@@ -33,14 +33,14 @@ const RegisterService = (param) => __awaiter(void 0, void 0, void 0, function* (
         .toUpperCase()}`;
     let referredByUser = null;
     if (param.referralCode) {
-        referredByUser = yield prisma_1.default.user.findUnique({
+        referredByUser = yield prisma_1.prisma.user.findUnique({
             where: { referralCode: param.referralCode },
         });
         if (!referredByUser)
             throw new Error("Invalid referral code");
     }
     // Mulai transaksi
-    const user = yield prisma_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield prisma_1.prisma.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
         // Create new user
         const newUser = yield tx.user.create({
             data: {
@@ -83,7 +83,7 @@ const RegisterService = (param) => __awaiter(void 0, void 0, void 0, function* (
 });
 exports.RegisterService = RegisterService;
 const LoginService = (param) => __awaiter(void 0, void 0, void 0, function* () {
-    const user = yield prisma_1.default.user.findFirst({
+    const user = yield prisma_1.prisma.user.findFirst({
         where: { email: param.email },
     });
     if (!user)

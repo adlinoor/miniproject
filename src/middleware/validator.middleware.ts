@@ -2,10 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import { AnyZodObject, ZodError } from "zod";
 import { z } from "zod";
 
-const idSchema = z.object({
-  id: z.number().int().positive().nonnegative(),
-});
-
 export const validateRequest =
   (schema: AnyZodObject) =>
   async (req: Request, res: Response, next: NextFunction) => {

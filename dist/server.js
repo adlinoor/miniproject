@@ -14,13 +14,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const http_1 = __importDefault(require("http"));
 const app_1 = __importDefault(require("./app"));
-const prisma_1 = __importDefault(require("./lib/prisma"));
+const prisma_1 = require("./lib/prisma");
 const PORT = process.env.PORT || 8080;
 function startServer() {
     return __awaiter(this, void 0, void 0, function* () {
         // Connect to database
         try {
-            yield prisma_1.default.$connect();
+            yield prisma_1.prisma.$connect();
             console.log("✅ Database connected");
         }
         catch (error) {
@@ -36,7 +36,7 @@ function startServer() {
         // Graceful shutdown
         const shutdown = () => __awaiter(this, void 0, void 0, function* () {
             console.log("\n🛑 Shutting down server...");
-            yield prisma_1.default.$disconnect();
+            yield prisma_1.prisma.$disconnect();
             server.close(() => {
                 console.log("✅ Server closed");
                 process.exit(0);

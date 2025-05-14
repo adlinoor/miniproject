@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import { checkTransactionExpirations } from "../services/transaction.service";
-import prisma from "../lib/prisma";
+import { prisma } from "../lib/prisma";
 
 cron.schedule("0 1 * * *", async () => {
   const now = new Date();

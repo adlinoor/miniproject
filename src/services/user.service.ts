@@ -1,4 +1,4 @@
-import prisma from "../lib/prisma";
+import { prisma } from "../lib/prisma";
 import { User } from "@prisma/client";
 import { v2 as cloudinary } from "cloudinary";
 

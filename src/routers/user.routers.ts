@@ -2,7 +2,7 @@ import express from "express";
 import * as userController from "../controllers/user.controller";
 import { authenticate } from "../middleware/auth.middleware";
 import { upload, uploadToCloudinary } from "../services/cloudinary.service";
-import prisma from "../lib/prisma";
+import { prisma } from "../lib/prisma";
 import { validateRequest } from "../middleware/validator.middleware";
 import { z } from "zod";
 import { getRewardSummary } from "../controllers/user.controller";

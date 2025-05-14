@@ -49,7 +49,7 @@ const express_1 = __importDefault(require("express"));
 const userController = __importStar(require("../controllers/user.controller"));
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const cloudinary_service_1 = require("../services/cloudinary.service");
-const prisma_1 = __importDefault(require("../lib/prisma"));
+const prisma_1 = require("../lib/prisma");
 const validator_middleware_1 = require("../middleware/validator.middleware");
 const zod_1 = require("zod");
 const user_controller_1 = require("../controllers/user.controller");
@@ -66,7 +66,7 @@ const profileUpdateSchema = zod_1.z.object({
 router.get("/me", auth_middleware_1.authenticate, userController.getProfile, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
-        const user = yield prisma_1.default.user.findUnique({
+        const user = yield prisma_1.prisma.user.findUnique({
             where: { id: (_a = req.user) === null || _a === void 0 ? void 0 : _a.id },
             select: {
                 id: true,
@@ -113,7 +113,7 @@ router.put("/profile", auth_middleware_1.authenticate, cloudinary_service_1.uplo
             // Validate file type and size here if necessary
             profilePictureUrl = yield (0, cloudinary_service_1.uploadToCloudinary)(req.file);
         }
-        const updatedUser = yield prisma_1.default.user.update({
+        const updatedUser = yield prisma_1.prisma.user.update({
             where: { id: Number(req.user.id) },
             data: Object.assign({ first_name,
                 last_name }, (profilePictureUrl && { profilePicture: profilePictureUrl })),

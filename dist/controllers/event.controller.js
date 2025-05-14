@@ -8,12 +8,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getEventsByOrganizer = exports.getEventAttendees = exports.deleteEvent = exports.updateEvent = exports.getEventById = exports.getEvents = exports.createEvent = exports.updateEventSchema = exports.createEventSchema = void 0;
-const prisma_1 = __importDefault(require("../lib/prisma"));
+const prisma_1 = require("../lib/prisma");
 const zod_1 = require("zod");
 exports.createEventSchema = zod_1.z.object({
     title: zod_1.z.string().min(1, "Title is required"),
@@ -60,7 +57,7 @@ const createEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         if (!organizerId) {
             return res.status(401).json({ message: "Unauthorized" });
         }
-        const event = yield prisma_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+        const event = yield prisma_1.prisma.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
             const newEvent = yield tx.event.create({
                 data: {
                     title,
@@ -134,7 +131,7 @@ const getEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const pageSize = Math.max(1, parseInt(limit, 10) || 10);
         const skip = (pageNumber - 1) * pageSize;
         const [events, total] = yield Promise.all([
-            prisma_1.default.event.findMany({
+            prisma_1.prisma.event.findMany({
                 where,
                 include: {
                     organizer: {
@@ -156,7 +153,7 @@ const getEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 skip,
                 take: pageSize,
             }),
-            prisma_1.default.event.count({ where }),
+            prisma_1.prisma.event.count({ where }),
         ]);
         // 🛑 Handling No Results
         if (events.length === 0) {
@@ -191,7 +188,7 @@ exports.getEvents = getEvents;
 const getEventById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
-        const event = yield prisma_1.default.event.findUnique({
+        const event = yield prisma_1.prisma.event.findUnique({
             where: { id: parseInt(id, 10) },
             include: {
                 organizer: {
@@ -233,7 +230,7 @@ const updateEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         const { id } = req.params;
         const eventId = parseInt(id, 10);
         const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
-        const existing = yield prisma_1.default.event.findUnique({ where: { id: eventId } });
+        const existing = yield prisma_1.prisma.event.findUnique({ where: { id: eventId } });
         if (!existing)
             return res.status(404).json({ message: "Event not found" });
         if (existing.organizerId !== userId) {
@@ -246,7 +243,7 @@ const updateEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             updateData.startDate = new Date(updateData.startDate);
         if (updateData.endDate)
             updateData.endDate = new Date(updateData.endDate);
-        const event = yield prisma_1.default.event.update({
+        const event = yield prisma_1.prisma.event.update({
             where: { id: eventId },
             data: updateData,
         });
@@ -264,7 +261,7 @@ const deleteEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         const { id } = req.params;
         const eventId = parseInt(id, 10);
         const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
-        const existing = yield prisma_1.default.event.findUnique({ where: { id: eventId } });
+        const existing = yield prisma_1.prisma.event.findUnique({ where: { id: eventId } });
         if (!existing)
             return res.status(404).json({ message: "Event not found" });
         if (existing.organizerId !== userId) {
@@ -272,7 +269,7 @@ const deleteEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 .status(403)
                 .json({ message: "Unauthorized to delete this event" });
         }
-        yield prisma_1.default.event.delete({
+        yield prisma_1.prisma.event.delete({
             where: { id: eventId },
         });
         res.json({ message: "Event deleted successfully" });
@@ -291,13 +288,13 @@ const getEventAttendees = (req, res) => __awaiter(void 0, void 0, void 0, functi
         if (isNaN(eventId)) {
             return res.status(400).json({ message: "Invalid event ID" });
         }
-        const event = yield prisma_1.default.event.findUnique({
+        const event = yield prisma_1.prisma.event.findUnique({
             where: { id: eventId },
         });
         if (!event || event.organizerId !== organizerId) {
             return res.status(403).json({ message: "Unauthorized" });
         }
-        const attendees = yield prisma_1.default.transaction.findMany({
+        const attendees = yield prisma_1.prisma.transaction.findMany({
             where: {
                 eventId,
                 status: { in: ["DONE", "WAITING_FOR_ADMIN_CONFIRMATION"] }, // hanya yang bayar
@@ -342,7 +339,7 @@ const getEventsByOrganizer = (req, res) => __awaiter(void 0, void 0, void 0, fun
     var _a;
     try {
         const organizerId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
-        const events = yield prisma_1.default.event.findMany({
+        const events = yield prisma_1.prisma.event.findMany({
             where: { organizerId },
             orderBy: { createdAt: "desc" },
         });

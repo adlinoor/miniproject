@@ -65,7 +65,7 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const client_1 = require("@prisma/client");
 const authService = __importStar(require("../services/auth.service"));
 const email_service_1 = require("../services/email.service");
-const prisma_1 = __importDefault(require("../lib/prisma"));
+const prisma_1 = require("../lib/prisma");
 dotenv_1.default.config();
 // ====================
 // 🔐 SCHEMA VALIDATION
@@ -145,7 +145,7 @@ exports.login = login;
 // ============================
 const forgotPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email } = req.body;
-    const user = yield prisma_1.default.user.findUnique({ where: { email } });
+    const user = yield prisma_1.prisma.user.findUnique({ where: { email } });
     if (!user) {
         return res.status(200).json({
             message: "If your email is registered, a reset link has been sent.",
@@ -153,7 +153,7 @@ const forgotPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
     const token = crypto_1.default.randomBytes(32).toString("hex");
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-    yield prisma_1.default.user.update({
+    yield prisma_1.prisma.user.update({
         where: { id: user.id },
         data: {
             resetToken: token,
@@ -171,7 +171,7 @@ exports.forgotPassword = forgotPassword;
 const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { token } = req.params;
     const { password } = req.body;
-    const user = yield prisma_1.default.user.findFirst({
+    const user = yield prisma_1.prisma.user.findFirst({
         where: {
             resetToken: token,
             resetTokenExp: { gt: new Date() },
@@ -181,7 +181,7 @@ const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         return res.status(400).json({ error: "Invalid or expired token" });
     }
     const hashed = yield bcrypt_1.default.hash(password, 10);
-    yield prisma_1.default.user.update({
+    yield prisma_1.prisma.user.update({
         where: { id: user.id },
         data: {
             password: hashed,

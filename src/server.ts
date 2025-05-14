@@ -1,7 +1,6 @@
 import http from "http";
 import app from "./app";
-import prisma from "./lib/prisma";
-import cron from "./utils/cron";
+import { prisma } from "./lib/prisma";
 
 const PORT = process.env.PORT || 8080;
 

@@ -8,12 +8,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getEventStatistics = void 0;
-const prisma_1 = __importDefault(require("../lib/prisma"));
+const prisma_1 = require("../lib/prisma");
 const getEventStatistics = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
@@ -27,7 +24,7 @@ const getEventStatistics = (req, res) => __awaiter(void 0, void 0, void 0, funct
         if (eventId) {
             filter.eventId = parseInt(eventId, 10);
         }
-        const transactions = yield prisma_1.default.transaction.findMany({
+        const transactions = yield prisma_1.prisma.transaction.findMany({
             where: Object.assign(Object.assign({}, filter), { status: "DONE" }),
             select: {
                 createdAt: true,

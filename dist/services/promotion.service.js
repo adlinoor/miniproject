@@ -8,14 +8,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.validatePromotion = exports.createPromotion = void 0;
-const prisma_1 = __importDefault(require("../lib/prisma"));
+const prisma_1 = require("../lib/prisma");
 const createPromotion = (eventId, organizerId, code, discount, startDate, endDate, maxUses) => __awaiter(void 0, void 0, void 0, function* () {
-    return yield prisma_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+    return yield prisma_1.prisma.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
         // Verify the event belongs to the organizer
         const event = yield tx.event.findFirst({
             where: { id: eventId, organizerId },
@@ -39,7 +36,7 @@ const createPromotion = (eventId, organizerId, code, discount, startDate, endDat
 });
 exports.createPromotion = createPromotion;
 const validatePromotion = (code, eventId, userId) => __awaiter(void 0, void 0, void 0, function* () {
-    const promotion = yield prisma_1.default.promotion.findUnique({
+    const promotion = yield prisma_1.prisma.promotion.findUnique({
         where: { code },
     });
     if (!promotion) {

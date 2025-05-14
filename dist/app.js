@@ -19,7 +19,7 @@ const morgan_1 = __importDefault(require("morgan"));
 const helmet_1 = __importDefault(require("helmet"));
 const express_rate_limit_1 = require("express-rate-limit");
 const dotenv_1 = __importDefault(require("dotenv"));
-const prisma_1 = __importDefault(require("./lib/prisma"));
+const prisma_1 = require("./lib/prisma");
 const error_middleware_1 = require("./middleware/error.middleware");
 const auth_routers_1 = __importDefault(require("./routers/auth.routers"));
 const event_routers_1 = __importDefault(require("./routers/event.routers"));
@@ -75,7 +75,7 @@ app.use("/api/user", user_routers_1.default);
 // Health check
 app.get("/api/health", (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        yield prisma_1.default.$queryRaw `SELECT 1`;
+        yield prisma_1.prisma.$queryRaw `SELECT 1`;
         res.status(200).json({
             status: "OK",
             database: "connected",

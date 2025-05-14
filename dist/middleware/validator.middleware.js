@@ -11,10 +11,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.validateIdParam = exports.validateDates = exports.validateRequest = void 0;
 const zod_1 = require("zod");
-const zod_2 = require("zod");
-const idSchema = zod_2.z.object({
-    id: zod_2.z.number().int().positive().nonnegative(),
-});
 const validateRequest = (schema) => (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         // Remove the nested 'body' wrapping
