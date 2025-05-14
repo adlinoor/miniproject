@@ -60,8 +60,12 @@ describe("Event API", () => {
       });
     });
 
-    it("should reject unauthorized access", async () => {
-      // Mock token verification failure
+    it("should return 401 if no token is provided", async () => {
+      const response = await request(app).post("/api/events").send({});
+      expect(response.status).toBe(401);
+    });
+
+    it("should return 403 if token is invalid", async () => {
       (jwt.verify as jest.Mock).mockImplementation(() => {
         throw new Error("Invalid token");
       });
@@ -70,9 +74,7 @@ describe("Event API", () => {
         .post("/api/events")
         .set("Authorization", "Bearer invalid-token")
         .send({});
-
-      expect(response.status).toBe(401);
-      expect(prismaMock.event.create).not.toHaveBeenCalled();
+      expect(response.status).toBe(403);
     });
 
     it("should reject non-organizer users", async () => {

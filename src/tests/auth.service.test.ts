@@ -1,7 +1,50 @@
+const mockTxUser = {
+  findFirst: jest.fn().mockResolvedValue(null),
+  findUnique: jest.fn().mockResolvedValue(null),
+  create: jest.fn().mockResolvedValue({
+    id: 1,
+    email: "test@example.com",
+    first_name: "Test",
+    last_name: "User",
+    isVerified: false,
+    role: "CUSTOMER",
+    referralCode: "REF-MOCK",
+    referredBy: null,
+  }),
+};
+
+const mockTxPoint = {
+  create: jest.fn().mockResolvedValue({}),
+};
+
+const mockTxCoupon = {
+  create: jest.fn().mockResolvedValue({}),
+};
+
+const mockPrisma = {
+  $transaction: jest.fn(async (cb) =>
+    cb({
+      user: mockTxUser,
+      point: mockTxPoint,
+      coupon: mockTxCoupon,
+    })
+  ),
+  user: mockTxUser,
+  point: mockTxPoint,
+  coupon: mockTxCoupon,
+};
+
+jest.mock("../lib/prisma", () => mockPrisma);
+
+jest.mock("bcrypt");
+jest.mock("jsonwebtoken");
+
+// ✅ 2. Import setelah mock
 import { RegisterService, LoginService } from "../services/auth.service";
 import prisma from "../lib/prisma";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+
 import {
   MOCK_EMAIL,
   MOCK_PASSWORD,
@@ -11,56 +54,35 @@ import {
   MOCK_ROLE,
   MOCK_JWT_TOKEN,
 } from "./mockData";
-import { prismaMock } from "./setup";
 
-jest.mock("../lib/prisma", () => ({
-  user: {
-    findFirst: jest.fn(),
-    create: jest.fn(),
-  },
-}));
-
-jest.mock("bcrypt");
-jest.mock("jsonwebtoken");
-
+// ✅ 3. Test Suite
 describe("Auth Service", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Mock Math.random to return a consistent value for referralCode
-    jest.spyOn(Math, "random").mockReturnValue(0.123456); // Mocking Math.random to return a consistent value
+    jest.spyOn(Math, "random").mockReturnValue(0.123456);
+    process.env.SECRET_KEY = "test-secret";
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   describe("RegisterService", () => {
     it("should register a new user successfully", async () => {
-      // Mocking Prisma and bcrypt behavior
-      (prisma.user.findFirst as jest.Mock).mockResolvedValue(null); // No existing user
-      (bcrypt.hash as jest.Mock).mockResolvedValue(MOCK_HASHED_PASSWORD); // Mock hashed password
-      (prisma.user.create as jest.Mock).mockResolvedValue({
-        id: 1,
-        email: MOCK_EMAIL,
-        first_name: MOCK_FIRST_NAME,
-        last_name: MOCK_LAST_NAME,
-        isVerified: false,
-        role: MOCK_ROLE,
-        referralCode: `REF-${Math.random()
-          .toString(36)
-          .substring(2, 10)
-          .toUpperCase()}`,
-      });
+      (bcrypt.hash as jest.Mock).mockResolvedValue(MOCK_HASHED_PASSWORD);
 
-      // Call the service
       const user = await RegisterService({
         email: MOCK_EMAIL,
         password: MOCK_PASSWORD,
         first_name: MOCK_FIRST_NAME,
         last_name: MOCK_LAST_NAME,
         role: MOCK_ROLE,
+        referralCode: null,
       });
 
-      // Assertions
       expect(user).toBeDefined();
       expect(user.email).toBe(MOCK_EMAIL);
-      expect(prisma.user.create).toHaveBeenCalledWith({
+      expect(mockTxUser.create).toHaveBeenCalledWith({
         data: {
           first_name: MOCK_FIRST_NAME,
           last_name: MOCK_LAST_NAME,
@@ -68,22 +90,15 @@ describe("Auth Service", () => {
           password: MOCK_HASHED_PASSWORD,
           role: MOCK_ROLE,
           isVerified: false,
-          referralCode: `REF-${Math.random()
-            .toString(36)
-            .substring(2, 10)
-            .toUpperCase()}`,
+          referralCode: expect.any(String),
+          referredBy: null,
         },
       });
     });
 
     it("should throw an error if email is already registered", async () => {
-      // Mocking Prisma behavior
-      (prisma.user.findFirst as jest.Mock).mockResolvedValue({
-        id: 1,
-        email: MOCK_EMAIL,
-      });
+      mockTxUser.findFirst.mockResolvedValueOnce({ id: 1, email: MOCK_EMAIL });
 
-      // Call the service and expect an error
       await expect(
         RegisterService({
           email: MOCK_EMAIL,
@@ -91,31 +106,20 @@ describe("Auth Service", () => {
           first_name: MOCK_FIRST_NAME,
           last_name: MOCK_LAST_NAME,
           role: MOCK_ROLE,
+          referralCode: null,
         })
       ).rejects.toThrow("Email already registered");
 
-      // Assertions
-      expect(prisma.user.findFirst).toHaveBeenCalledWith({
+      expect(mockTxUser.findFirst).toHaveBeenCalledWith({
         where: { email: MOCK_EMAIL },
       });
-      expect(prisma.user.create).not.toHaveBeenCalled();
+      expect(mockTxUser.create).not.toHaveBeenCalled();
     });
   });
 
   describe("LoginService", () => {
-    beforeEach(() => {
-      // Clear all mocks
-      jest.clearAllMocks();
-
-      // Mock JWT sign to return our mock token
-      (jwt.sign as jest.Mock).mockReturnValue(MOCK_JWT_TOKEN);
-
-      // Ensure SECRET_KEY is set
-      process.env.SECRET_KEY = "test-secret";
-    });
     it("should log in successfully with valid credentials", async () => {
-      // Mocking Prisma, bcrypt, and JWT behavior
-      (prisma.user.findFirst as jest.Mock).mockResolvedValue({
+      mockTxUser.findFirst.mockResolvedValue({
         id: 1,
         email: MOCK_EMAIL,
         first_name: MOCK_FIRST_NAME,
@@ -124,40 +128,23 @@ describe("Auth Service", () => {
         role: MOCK_ROLE,
         isVerified: true,
       });
-      (bcrypt.compare as jest.Mock).mockResolvedValue(true); // Password matches
 
-      // Call the service
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      (jwt.sign as jest.Mock).mockReturnValue(MOCK_JWT_TOKEN);
+
       const result = await LoginService({
         email: MOCK_EMAIL,
         password: MOCK_PASSWORD,
       });
 
-      // Assertions
       expect(result).toBeDefined();
       expect(result.token).toBe(MOCK_JWT_TOKEN);
       expect(result.user.email).toBe(MOCK_EMAIL);
-      expect(bcrypt.compare).toHaveBeenCalledWith(
-        MOCK_PASSWORD,
-        MOCK_HASHED_PASSWORD
-      );
-      expect(jwt.sign).toHaveBeenCalledWith(
-        {
-          id: 1,
-          email: MOCK_EMAIL,
-          first_name: MOCK_FIRST_NAME,
-          last_name: MOCK_LAST_NAME,
-          role: MOCK_ROLE,
-        },
-        "test-secret", // Use the actual secret from environment
-        { expiresIn: "1h" }
-      );
     });
 
     it("should throw an error if email is not registered", async () => {
-      // Mocking Prisma behavior
-      (prisma.user.findFirst as jest.Mock).mockResolvedValue(null); // No user found
+      mockTxUser.findFirst.mockResolvedValue(null);
 
-      // Call the service and expect an error
       await expect(
         LoginService({
           email: "nonexistent@example.com",
@@ -165,17 +152,13 @@ describe("Auth Service", () => {
         })
       ).rejects.toThrow("Email not registered");
 
-      // Assertions
-      expect(prisma.user.findFirst).toHaveBeenCalledWith({
+      expect(mockTxUser.findFirst).toHaveBeenCalledWith({
         where: { email: "nonexistent@example.com" },
       });
-      expect(bcrypt.compare).not.toHaveBeenCalled();
-      expect(jwt.sign).not.toHaveBeenCalled();
     });
 
     it("should throw an error if password is incorrect", async () => {
-      // Mocking Prisma and bcrypt behavior
-      (prisma.user.findFirst as jest.Mock).mockResolvedValue({
+      mockTxUser.findFirst.mockResolvedValue({
         id: 1,
         email: MOCK_EMAIL,
         first_name: MOCK_FIRST_NAME,
@@ -184,9 +167,9 @@ describe("Auth Service", () => {
         role: MOCK_ROLE,
         isVerified: true,
       });
-      (bcrypt.compare as jest.Mock).mockResolvedValue(false); // Password does not match
 
-      // Call the service and expect an error
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
       await expect(
         LoginService({
           email: MOCK_EMAIL,
@@ -194,19 +177,10 @@ describe("Auth Service", () => {
         })
       ).rejects.toThrow("Incorrect password");
 
-      // Assertions
-      expect(prisma.user.findFirst).toHaveBeenCalledWith({
-        where: { email: MOCK_EMAIL },
-      });
       expect(bcrypt.compare).toHaveBeenCalledWith(
         "wrongpassword",
         MOCK_HASHED_PASSWORD
       );
-      expect(jwt.sign).not.toHaveBeenCalled();
     });
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
   });
 });

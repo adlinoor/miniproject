@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authMiddleware } from "../middleware/auth.middleware";
+import { authenticate } from "../middleware/auth.middleware";
 import {
   createEventTransaction,
   getTransactionDetails,
@@ -9,8 +9,8 @@ import {
 const router = Router();
 
 // Routes for transactions
-router.post("/", authMiddleware, createEventTransaction);
-router.get("/:id", authMiddleware, getTransactionDetails);
-router.put("/:id", authMiddleware, updateTransaction);
+router.post("/", authenticate, createEventTransaction);
+router.get("/:id", authenticate, getTransactionDetails);
+router.put("/:id", authenticate, updateTransaction);
 
 export default router;
