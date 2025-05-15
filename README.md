@@ -1,59 +1,130 @@
-# MiniProject API
+# 🎯 Mini Project API – Event Management System
 
-A simple API project for managing basic data operations.
+Backend API untuk aplikasi manajemen event berbasis peran (**Customer** & **Organizer**), dengan fitur:
+- Autentikasi & otorisasi
+- Sistem referral & hadiah
+- Dashboard event untuk organizer
+- Transaksi & kupon hadiah
 
-## Table of Contents
-- Features
-- Installation
-- Usage
-- API Endpoints
-- Contributing
-- License
+Dibangun menggunakan: **Node.js**, **Express**, **Prisma**, dan **PostgreSQL**.
 
-## Features
-- Basic CRUD operations
-- Simple RESTful API structure
-- Easy to set up and use
+---
 
-## Installation
+## ✨ Fitur Utama
 
-1. Clone the repository:
+### 1. Autentikasi & Otorisasi
+- Register & login menggunakan JWT
+- Middleware berdasarkan role (`CUSTOMER`, `ORGANIZER`)
+- Validasi input menggunakan Zod
+
+### 2. Sistem Referral & Profil
+- Kode referral saat registrasi
+- Poin & hadiah berdasarkan referral
+- Informasi profil pengguna lengkap
+
+### 3. Manajemen Event (Organizer)
+- Buat, edit, dan hapus event
+- Lihat daftar peserta
+- Kirim notifikasi pemenang kupon
+
+### 4. Transaksi & Kupon Hadiah
+- Customer dapat bergabung pada event
+- Kupon diundi secara acak
+- Cron job otomatis untuk mengecek kupon yang kadaluarsa
+
+---
+
+## ⚙️ Teknologi
+
+- **Node.js** + **Express** — Backend & routing
+- **PostgreSQL** + **Prisma** — Database & ORM
+- **Zod** — Validasi input
+- **JWT** — Autentikasi token
+- **Cron** — Penjadwalan otomatis
+
+---
+
+## 📁 Struktur Folder
+
+```
+src/
+├── controllers     # Handler untuk setiap fitur
+├── middlewares     # Middleware otentikasi & error handler
+├── routes          # Modular route
+├── services        # Logika bisnis & akses database
+├── utils           # Helper dan cron job
+└── app.ts          # Inisialisasi express app
+```
+
+---
+
+## 🚀 Cara Menjalankan Secara Lokal
+
+### 1. Clone & Install Dependencies
 ```bash
 git clone https://github.com/adlinoor/miniproject-api.git
 cd miniproject-api
-```
-
-2. Install dependencies:
-```bash
 npm install
 ```
 
-3. Start the server:
+### 2. Buat File `.env`
+```env
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/DATABASE"
+JWT_SECRET="your_secret_key"
+PORT=8080
+```
+
+### 3. Migrasi & Seeding Database
+```bash
+npx prisma migrate dev
+npx prisma db seed
+```
+
+### 4. Jalankan Server Development
+```bash
+npm run dev
+```
+
+### 5. Jalankan untuk Deployment (Vercel / Serverless)
+Untuk deployment ke platform seperti **Vercel**, gunakan:
+
 ```bash
 npm start
 ```
 
-## Usage
-The API will be running on `http://localhost:8080` by default.
+Script `start` akan menjalankan:
+```bash
+npm run build && node dist/app.js
+```
 
-## API Endpoints
+Pastikan hasil build tersedia:
+```bash
+npm run build
+```
 
-### Users
-- `GET /users` - Get all users
-- `GET /users/:id` - Get a specific user
-- `POST /users` - Create a new user
-- `PUT /users/:id` - Update a user
-- `DELETE /users/:id` - Delete a user
+> **Catatan untuk Vercel**:
+> - **Build Command**: `npm run build`
+> - **Start Command**: `npm start`
+> - Entry point: `dist/app.js` (hasil build dari `src/app.ts`)
 
-### Products
-- `GET /products` - Get all products
-- `GET /products/:id` - Get a specific product
-- `POST /products` - Create a new product
-- `PUT /products/:id` - Update a product
-- `DELETE /products/:id` - Delete a product
+---
 
-## Contributing
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+## 🧪 Testing
 
-## License
-[MIT](https://choosealicense.com/licenses/mit/)
+Unit test tersedia untuk fitur utama:
+```bash
+npm run test
+```
+
+---
+
+## 👤 Kontributor
+
+- [@adlinoor](https://github.com/adlinoor)
+- [@rianmumtaz12](https://github.com/rianmumtaz12)
+
+---
+
+## 📄 Lisensi
+
+Proyek ini dilisensikan di bawah MIT License.
