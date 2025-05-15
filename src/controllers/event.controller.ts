@@ -57,10 +57,11 @@ export const createEvent = async (req: Request, res: Response) => {
     } = req.body;
 
     const organizerId = req.user?.id;
-
     if (!organizerId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
+
+    const imageUrl = req.body.imageUrl ?? null;
 
     const event = await prisma.$transaction(async (tx) => {
       const newEvent = await tx.event.create({
@@ -76,6 +77,15 @@ export const createEvent = async (req: Request, res: Response) => {
           organizerId,
         },
       });
+
+      if (imageUrl) {
+        await tx.image.create({
+          data: {
+            url: imageUrl,
+            eventId: newEvent.id,
+          },
+        });
+      }
 
       if (ticketTypes && ticketTypes.length > 0) {
         await tx.ticket.createMany({
@@ -265,11 +275,15 @@ export const updateEvent = async (req: Request, res: Response) => {
         .json({ message: "Unauthorized to modify this event" });
     }
 
-    const updateData = req.body;
+    const updateData: any = req.body;
 
     if (updateData.startDate)
       updateData.startDate = new Date(updateData.startDate);
     if (updateData.endDate) updateData.endDate = new Date(updateData.endDate);
+
+    if (req.body.imageUrl) {
+      updateData.imageUrl = req.body.imageUrl;
+    }
 
     const event = await prisma.event.update({
       where: { id: eventId },

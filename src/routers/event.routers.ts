@@ -20,6 +20,8 @@ import {
 } from "../middleware/validator.middleware";
 
 import { authenticate, authorizeRoles } from "../middleware/auth.middleware";
+import { upload } from "../services/cloudinary.service";
+import { uploadImageAndAttachUrl } from "../middleware/uploadImageAndAttachUrl";
 
 const router = Router();
 
@@ -53,6 +55,17 @@ router.post(
   "/",
   authenticate,
   authorizeRoles(Role.ORGANIZER),
+  validateRequest(createEventSchema),
+  validateDates("startDate", "endDate"),
+  createEvent
+);
+
+router.post(
+  "/",
+  authenticate,
+  authorizeRoles(Role.ORGANIZER),
+  upload.single("image"), // 💾 multer memory storage
+  uploadImageAndAttachUrl, // ☁️ attach Cloudinary URL to req.body.imageUrl
   validateRequest(createEventSchema),
   validateDates("startDate", "endDate"),
   createEvent
