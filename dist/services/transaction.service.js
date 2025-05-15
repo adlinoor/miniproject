@@ -8,15 +8,18 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getUserTransactions = exports.checkTransactionExpirations = exports.updateTransactionStatus = exports.getTransaction = exports.createTransaction = void 0;
-const prisma_1 = require("../lib/prisma");
+const prisma_1 = __importDefault(require("../lib/prisma"));
 const client_1 = require("@prisma/client");
 const email_service_1 = require("./email.service");
 const PAYMENT_WINDOW_HOURS = 2;
 const POINT_EXPIRY_MONTHS = 3;
 const createTransaction = (userId, eventId, quantity, voucherCode, pointsUsed, ticketTypeId) => __awaiter(void 0, void 0, void 0, function* () {
-    return yield prisma_1.prisma.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+    return yield prisma_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
         // 1. Validate event and user
         const [event, user] = yield Promise.all([
             tx.event.findUnique({
@@ -125,7 +128,7 @@ const createTransaction = (userId, eventId, quantity, voucherCode, pointsUsed, t
 });
 exports.createTransaction = createTransaction;
 const getTransaction = (id) => __awaiter(void 0, void 0, void 0, function* () {
-    const transaction = yield prisma_1.prisma.transaction.findUnique({
+    const transaction = yield prisma_1.default.transaction.findUnique({
         where: { id },
         include: {
             event: true,
@@ -139,7 +142,7 @@ const getTransaction = (id) => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.getTransaction = getTransaction;
 const updateTransactionStatus = (id, status, paymentProof) => __awaiter(void 0, void 0, void 0, function* () {
-    return yield prisma_1.prisma.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+    return yield prisma_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
         const transaction = yield tx.transaction.findUnique({
             where: { id },
             include: { event: true, user: true, details: true },
@@ -193,7 +196,7 @@ function restoreResources(tx, transaction) {
 }
 const checkTransactionExpirations = () => __awaiter(void 0, void 0, void 0, function* () {
     const now = new Date();
-    yield prisma_1.prisma.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+    yield prisma_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
         const unpaidExpired = yield tx.transaction.findMany({
             where: {
                 status: client_1.TransactionStatus.WAITING_FOR_PAYMENT,
@@ -214,7 +217,7 @@ const checkTransactionExpirations = () => __awaiter(void 0, void 0, void 0, func
 });
 exports.checkTransactionExpirations = checkTransactionExpirations;
 const getUserTransactions = (userId) => __awaiter(void 0, void 0, void 0, function* () {
-    return yield prisma_1.prisma.transaction.findMany({
+    return yield prisma_1.default.transaction.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
         include: {

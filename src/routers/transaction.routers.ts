@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticate } from "../middleware/auth.middleware";
+import { authenticate, authorizeRoles } from "../middleware/auth.middleware";
 import {
   checkUserJoined,
   createEventTransaction,
@@ -8,20 +8,25 @@ import {
   getTransactionDetails,
   updateTransaction,
 } from "../controllers/transaction.controller";
-import { authorizeRoles } from "../middleware/auth.middleware";
 import { Role } from "@prisma/client";
 
 const router = Router();
 
-// Routes for transactions
+// CUSTOMER: Buat transaksi event
 router.post(
   "/",
   authenticate,
-  authorizeRoles("CUSTOMER"),
+  authorizeRoles(Role.CUSTOMER),
   createEventTransaction
 );
+
+// CUSTOMER: Cek detail transaksi (atau milik sendiri)
 router.get("/:id", authenticate, getTransactionDetails);
+
+// CUSTOMER: Cek apakah sudah join event tertentu
 router.get("/transactions/check", authenticate, checkUserJoined);
+
+// CUSTOMER: Lihat event yang diikuti
 router.get(
   "/myevents",
   authenticate,
@@ -29,6 +34,7 @@ router.get(
   getMyEvents
 );
 
+// ORGANIZER: Lihat transaksi event yang mereka buat
 router.get(
   "/organizer",
   authenticate,
@@ -36,6 +42,7 @@ router.get(
   getOrganizerTransactions
 );
 
+// ORGANIZER: Update status transaksi (approve/reject)
 router.put(
   "/:id/status",
   authenticate,
@@ -43,6 +50,7 @@ router.put(
   updateTransaction
 );
 
+// Tambahan umum: Update data transaksi (versi feature 1)
 router.put("/:id", authenticate, updateTransaction);
 
 export default router;

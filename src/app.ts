@@ -5,7 +5,7 @@ import morgan from "morgan";
 import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
 import dotenv from "dotenv";
-import { prisma } from "./lib/prisma";
+import prisma from "./lib/prisma";
 import { errorHandler } from "./middleware/error.middleware";
 import authRouter from "./routers/auth.routers";
 import eventRouter from "./routers/event.routers";
@@ -13,7 +13,6 @@ import reviewRouter from "./routers/review.routers";
 import transactionRouter from "./routers/transaction.routers";
 import userRouter from "./routers/user.routers";
 import { upload } from "./services/cloudinary.service";
-import { mailer } from "./services/email.service";
 
 // Load environment variables
 dotenv.config();

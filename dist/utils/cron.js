@@ -13,20 +13,24 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const node_cron_1 = __importDefault(require("node-cron"));
+const prisma_1 = __importDefault(require("../lib/prisma"));
 const transaction_service_1 = require("../services/transaction.service");
-const prisma_1 = require("../lib/prisma");
+/**
+ * 🔁 Daily cleanup for points and coupons
+ * Runs at 01:00 every day
+ */
 node_cron_1.default.schedule("0 1 * * *", () => __awaiter(void 0, void 0, void 0, function* () {
     const now = new Date();
     console.log("[CRON] Running daily cleanup...");
     try {
-        // Hapus poin yang sudah expired
-        const deletedPoints = yield prisma_1.prisma.point.deleteMany({
+        // 🧹 Hapus poin expired
+        const deletedPoints = yield prisma_1.default.point.deleteMany({
             where: {
                 expiresAt: { lt: now },
             },
         });
-        // Tandai kupon yang sudah expired sebagai isUsed = true
-        const expiredCoupons = yield prisma_1.prisma.coupon.updateMany({
+        // 🧼 Update kupon kadaluarsa jadi isUsed = true
+        const expiredCoupons = yield prisma_1.default.coupon.updateMany({
             where: {
                 expiresAt: { lt: now },
                 isUsed: false,
@@ -41,13 +45,13 @@ node_cron_1.default.schedule("0 1 * * *", () => __awaiter(void 0, void 0, void 0
         console.error("[CRON] Cleanup job failed:", error);
     }
 }));
-// Run every 30 minutes
+/**
+ * ⏳ Transaction expiration check
+ * Runs every 30 minutes
+ */
 node_cron_1.default.schedule("*/30 * * * *", transaction_service_1.checkTransactionExpirations);
 /**
- * Schedules a task to run at a specified cron schedule.
- * @param taskName - A descriptive name for the task (used in logs).
- * @param cronExpression - The cron expression defining the schedule.
- * @param taskCallback - The function containing the task logic to execute.
+ * 🧰 Custom scheduler (optional utility)
  */
 function scheduleTask(taskName, cronExpression, taskCallback) {
     node_cron_1.default.schedule(cronExpression, () => __awaiter(this, void 0, void 0, function* () {

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { prisma } from "../lib/prisma";
+import prisma from "../lib/prisma";
 import { TransactionStatus } from "@prisma/client";
 
 export const createReview = async (req: Request, res: Response) => {
@@ -14,12 +14,12 @@ export const createReview = async (req: Request, res: Response) => {
     }
 
     // 2. Check authentication and get user ID
-    if (!req.user.id) {
+    if (!req.user?.id) {
       return res.status(401).json({
         message: "Authentication required",
       });
     }
-    const userId = Number(req.user.id);
+    const userId = Number(req.user?.id);
 
     // 3. Validate rating range (1-5)
     if (rating < 1 || rating > 5) {

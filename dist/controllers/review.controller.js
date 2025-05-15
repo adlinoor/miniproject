@@ -8,11 +8,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getEventReviews = exports.createReview = void 0;
-const prisma_1 = require("../lib/prisma");
+const prisma_1 = __importDefault(require("../lib/prisma"));
 const client_1 = require("@prisma/client");
 const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
     try {
         // 1. Validate required fields
         const { eventId, rating, comment } = req.body;
@@ -22,12 +26,12 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             });
         }
         // 2. Check authentication and get user ID
-        if (!req.user.id) {
+        if (!((_a = req.user) === null || _a === void 0 ? void 0 : _a.id)) {
             return res.status(401).json({
                 message: "Authentication required",
             });
         }
-        const userId = Number(req.user.id);
+        const userId = Number((_b = req.user) === null || _b === void 0 ? void 0 : _b.id);
         // 3. Validate rating range (1-5)
         if (rating < 1 || rating > 5) {
             return res.status(400).json({
@@ -35,7 +39,7 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             });
         }
         // 4. Check if user attended the event (with proper status)
-        const hasAttended = yield prisma_1.prisma.transaction.findFirst({
+        const hasAttended = yield prisma_1.default.transaction.findFirst({
             where: {
                 userId,
                 eventId,
@@ -52,7 +56,7 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             });
         }
         // 5. Check for existing review
-        const existingReview = yield prisma_1.prisma.review.findFirst({
+        const existingReview = yield prisma_1.default.review.findFirst({
             where: {
                 userId,
                 eventId,
@@ -65,7 +69,7 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             });
         }
         // 6. Create the review
-        const review = yield prisma_1.prisma.review.create({
+        const review = yield prisma_1.default.review.create({
             data: {
                 eventId,
                 userId,
@@ -112,7 +116,7 @@ const getEventReviews = (req, res) => __awaiter(void 0, void 0, void 0, function
                 message: "Event ID is required",
             });
         }
-        const reviews = yield prisma_1.prisma.review.findMany({
+        const reviews = yield prisma_1.default.review.findMany({
             where: { eventId: Number(eventId) },
             include: {
                 user: {

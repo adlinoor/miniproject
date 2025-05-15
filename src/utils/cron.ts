@@ -1,20 +1,24 @@
 import cron from "node-cron";
+import prisma from "../lib/prisma";
 import { checkTransactionExpirations } from "../services/transaction.service";
-import { prisma } from "../lib/prisma";
 
+/**
+ * 🔁 Daily cleanup for points and coupons
+ * Runs at 01:00 every day
+ */
 cron.schedule("0 1 * * *", async () => {
   const now = new Date();
   console.log("[CRON] Running daily cleanup...");
 
   try {
-    // Hapus poin yang sudah expired
+    // 🧹 Hapus poin expired
     const deletedPoints = await prisma.point.deleteMany({
       where: {
         expiresAt: { lt: now },
       },
     });
 
-    // Tandai kupon yang sudah expired sebagai isUsed = true
+    // 🧼 Update kupon kadaluarsa jadi isUsed = true
     const expiredCoupons = await prisma.coupon.updateMany({
       where: {
         expiresAt: { lt: now },
@@ -33,14 +37,14 @@ cron.schedule("0 1 * * *", async () => {
   }
 });
 
-// Run every 30 minutes
+/**
+ * ⏳ Transaction expiration check
+ * Runs every 30 minutes
+ */
 cron.schedule("*/30 * * * *", checkTransactionExpirations);
 
 /**
- * Schedules a task to run at a specified cron schedule.
- * @param taskName - A descriptive name for the task (used in logs).
- * @param cronExpression - The cron expression defining the schedule.
- * @param taskCallback - The function containing the task logic to execute.
+ * 🧰 Custom scheduler (optional utility)
  */
 function scheduleTask(
   taskName: string,

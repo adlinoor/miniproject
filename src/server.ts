@@ -1,8 +1,10 @@
 import http from "http";
 import app from "./app";
-import { prisma } from "./lib/prisma";
+import prisma from "./lib/prisma";
+import cron from "./utils/cron";
 
 const PORT = process.env.PORT || 8080;
+const ENV = process.env.NODE_ENV || "development";
 
 async function startServer() {
   // Connect to database
@@ -14,12 +16,18 @@ async function startServer() {
     process.exit(1);
   }
 
+  // 🕒 Jalankan scheduled cron job (poin, kupon, transaksi expired)
+  console.log("⏱️  Starting scheduled cron jobs...");
+  // (cron import cukup, jadwal langsung aktif)
+
   // Create HTTP server
   const server = http.createServer(app);
 
   // Start listening
   server.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+    const url = `http://localhost:${PORT}`;
+    console.log(`🚀 Server is running at ${url}`);
+    console.log(`🌐 Environment: ${ENV}`);
   });
 
   // Graceful shutdown

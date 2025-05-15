@@ -63,8 +63,9 @@ const updateSchema = zod_1.z.object({
 });
 // ✅ Ambil profil user yang login
 const getProfile = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
-        const userId = req.user.id;
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
         if (!userId) {
             return res.status(401).json({ message: "Unauthorized" });
         }
@@ -81,8 +82,9 @@ const getProfile = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
 exports.getProfile = getProfile;
 // ✅ Update profil user (nama, email, password, foto)
 const updateProfile = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
-        const userId = req.user.id;
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
         if (!userId) {
             return res.status(401).json({ message: "Unauthorized" });
         }
@@ -108,8 +110,9 @@ const updateProfile = (req, res, next) => __awaiter(void 0, void 0, void 0, func
 });
 exports.updateProfile = updateProfile;
 const getRewardSummary = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
-        const userId = req.user.id;
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
         if (!userId) {
             return res.status(401).json({ message: "Unauthorized" });
         }

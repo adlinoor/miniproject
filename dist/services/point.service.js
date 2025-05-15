@@ -8,9 +8,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.expirePoints = exports.usePoints = exports.addPoints = exports.getUserPointsBalance = void 0;
-const prisma_1 = require("../lib/prisma");
+const prisma_1 = __importDefault(require("../lib/prisma"));
 const client_1 = require("@prisma/client");
 /**
  * Get the total points balance for a user.
@@ -19,7 +22,7 @@ const client_1 = require("@prisma/client");
  */
 const getUserPointsBalance = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const result = yield prisma_1.prisma.point.aggregate({
+    const result = yield prisma_1.default.point.aggregate({
         where: {
             userId,
             expiresAt: { gt: new Date() }, // Only include unexpired points
@@ -41,7 +44,7 @@ exports.getUserPointsBalance = getUserPointsBalance;
 const addPoints = (userId_1, amount_1, ...args_1) => __awaiter(void 0, [userId_1, amount_1, ...args_1], void 0, function* (userId, amount, expiresInMonths = 3) {
     const expiresAt = new Date();
     expiresAt.setMonth(expiresAt.getMonth() + expiresInMonths);
-    return yield prisma_1.prisma.point.create({
+    return yield prisma_1.default.point.create({
         data: {
             userId,
             amount,
@@ -57,7 +60,7 @@ exports.addPoints = addPoints;
  * @returns A boolean indicating whether the operation was successful.
  */
 const usePoints = (userId, amount) => __awaiter(void 0, void 0, void 0, function* () {
-    return yield prisma_1.prisma.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+    return yield prisma_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
         var _a;
         // Get the total available points for the user
         const availablePoints = yield tx.point.aggregate({
@@ -116,7 +119,7 @@ exports.usePoints = usePoints;
  */
 const expirePoints = () => __awaiter(void 0, void 0, void 0, function* () {
     const now = new Date();
-    yield prisma_1.prisma.point.deleteMany({
+    yield prisma_1.default.point.deleteMany({
         where: {
             expiresAt: { lte: now }, // Points that have expired
             amount: { gt: 0 }, // Only points with a positive balance

@@ -6,7 +6,7 @@ import {
 } from "../services/transaction.service";
 import { TransactionStatus } from "@prisma/client";
 import { z } from "zod";
-import { prisma } from "../lib/prisma";
+import prisma from "../lib/prisma";
 
 export const transactionSchema = z.object({
   eventId: z.number().min(1),
@@ -23,7 +23,7 @@ export const transactionUpdateSchema = z.object({
 
 export const createEventTransaction = async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -100,7 +100,7 @@ export const getUserTransactionHistory = async (
   res: Response
 ) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     const transactions = await getUserTransactions(userId);
@@ -129,7 +129,7 @@ function handleTransactionError(res: Response, error: any) {
 }
 
 export const checkUserJoined = async (req: Request, res: Response) => {
-  const userId = req.user.id;
+  const userId = req.user?.id;
   const eventId = Number(req.query.eventId);
 
   const existing = await prisma.transaction.findFirst({
@@ -141,7 +141,7 @@ export const checkUserJoined = async (req: Request, res: Response) => {
 
 export const getMyEvents = async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?.id;
 
     const transactions = await prisma.transaction.findMany({
       where: { userId },
@@ -158,7 +158,7 @@ export const getMyEvents = async (req: Request, res: Response) => {
 
 export const getOrganizerTransactions = async (req: Request, res: Response) => {
   try {
-    const organizerId = req.user.id;
+    const organizerId = req.user?.id;
     if (!organizerId) return res.status(401).json({ message: "Unauthorized" });
 
     const transactions = await prisma.transaction.findMany({
