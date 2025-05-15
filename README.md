@@ -14,7 +14,7 @@ Dibangun menggunakan: **Node.js**, **Express**, **Prisma**, dan **PostgreSQL**.
 
 ### 1. Autentikasi & Otorisasi
 - Register & login menggunakan JWT
-- Middleware berdasarkan role (`customer`, `organizer`)
+- Middleware berdasarkan role (`CUSTOMER`, `ORGANIZER`)
 - Validasi input menggunakan Zod
 
 ### 2. Sistem Referral & Profil
