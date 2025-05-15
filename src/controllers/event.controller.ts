@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
-import { number, z } from "zod";
+import { z } from "zod";
 
 export const createEventSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -55,7 +55,7 @@ export const createEvent = async (req: Request, res: Response) => {
       ticketTypes,
     } = req.body;
 
-    const organizerId = req.user?.id;
+    const organizerId = req.user.id;
 
     if (!organizerId) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -253,7 +253,7 @@ export const updateEvent = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const eventId = parseInt(id, 10);
-    const userId = req.user?.id;
+    const userId = req.user.id;
 
     const existing = await prisma.event.findUnique({ where: { id: eventId } });
     if (!existing) return res.status(404).json({ message: "Event not found" });
@@ -286,7 +286,7 @@ export const deleteEvent = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const eventId = parseInt(id, 10);
-    const userId = req.user?.id;
+    const userId = req.user.id;
 
     const existing = await prisma.event.findUnique({ where: { id: eventId } });
     if (!existing) return res.status(404).json({ message: "Event not found" });
@@ -311,7 +311,7 @@ export const deleteEvent = async (req: Request, res: Response) => {
 export const getEventAttendees = async (req: Request, res: Response) => {
   try {
     const eventId = parseInt(req.params.id, 10);
-    const organizerId = req.user?.id;
+    const organizerId = req.user.id;
 
     if (isNaN(eventId)) {
       return res.status(400).json({ message: "Invalid event ID" });
@@ -369,7 +369,7 @@ export const getEventAttendees = async (req: Request, res: Response) => {
 
 export const getEventsByOrganizer = async (req: Request, res: Response) => {
   try {
-    const organizerId = req.user?.id;
+    const organizerId = req.user.id;
 
     const events = await prisma.event.findMany({
       where: { organizerId },

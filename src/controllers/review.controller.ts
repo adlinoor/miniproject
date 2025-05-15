@@ -14,7 +14,7 @@ export const createReview = async (req: Request, res: Response) => {
     }
 
     // 2. Check authentication and get user ID
-    if (!req.user?.id) {
+    if (!req.user.id) {
       return res.status(401).json({
         message: "Authentication required",
       });

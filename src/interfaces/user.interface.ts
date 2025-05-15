@@ -9,7 +9,7 @@ export interface IRegisterParam {
   role: Role;
 }
 
-export interface LoginFormValuesParam {
+export interface ILoginParam {
   email: string;
   password: string;
 }

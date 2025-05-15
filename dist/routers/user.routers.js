@@ -64,10 +64,9 @@ const profileUpdateSchema = zod_1.z.object({
  * Get the authenticated user's profile.
  */
 router.get("/me", auth_middleware_1.authenticate, userController.getProfile, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     try {
         const user = yield prisma_1.prisma.user.findUnique({
-            where: { id: (_a = req.user) === null || _a === void 0 ? void 0 : _a.id },
+            where: { id: req.user.id },
             select: {
                 id: true,
                 first_name: true,

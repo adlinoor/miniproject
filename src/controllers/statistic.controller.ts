@@ -3,7 +3,7 @@ import { prisma } from "../lib/prisma";
 
 export const getEventStatistics = async (req: Request, res: Response) => {
   try {
-    const organizerId = req.user?.id;
+    const organizerId = req.user.id;
     const { eventId } = req.params;
 
     const filter: any = {

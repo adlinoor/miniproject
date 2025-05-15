@@ -3,7 +3,6 @@ import * as userService from "../services/user.service";
 import { z } from "zod";
 import bcrypt from "bcrypt";
 import { uploader } from "../lib/cloudinary";
-import { upload } from "../utils/multer"; // pastikan path sesuai
 
 // ✅ Schema validasi untuk update profile
 const updateSchema = z.object({
@@ -24,7 +23,7 @@ export const getProfile = async (
   next: NextFunction
 ) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user.id;
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -47,7 +46,7 @@ export const updateProfile = async (
   next: NextFunction
 ) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user.id;
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -83,7 +82,7 @@ export const getRewardSummary = async (
   next: NextFunction
 ) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user.id;
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }

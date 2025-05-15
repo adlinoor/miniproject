@@ -12,9 +12,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getEventStatistics = void 0;
 const prisma_1 = require("../lib/prisma");
 const getEventStatistics = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     try {
-        const organizerId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        const organizerId = req.user.id;
         const { eventId } = req.params;
         const filter = {
             event: {

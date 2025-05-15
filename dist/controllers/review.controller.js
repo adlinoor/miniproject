@@ -13,7 +13,6 @@ exports.getEventReviews = exports.createReview = void 0;
 const prisma_1 = require("../lib/prisma");
 const client_1 = require("@prisma/client");
 const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     try {
         // 1. Validate required fields
         const { eventId, rating, comment } = req.body;
@@ -23,7 +22,7 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             });
         }
         // 2. Check authentication and get user ID
-        if (!((_a = req.user) === null || _a === void 0 ? void 0 : _a.id)) {
+        if (!req.user.id) {
             return res.status(401).json({
                 message: "Authentication required",
             });

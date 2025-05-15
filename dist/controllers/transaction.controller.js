@@ -26,9 +26,8 @@ exports.transactionUpdateSchema = zod_1.z.object({
     paymentProof: zod_1.z.string().optional(),
 });
 const createEventTransaction = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     try {
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        const userId = req.user.id;
         if (!userId) {
             return res.status(401).json({ message: "Unauthorized" });
         }
@@ -84,9 +83,8 @@ const updateTransaction = (req, res) => __awaiter(void 0, void 0, void 0, functi
 });
 exports.updateTransaction = updateTransaction;
 const getUserTransactionHistory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     try {
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        const userId = req.user.id;
         if (!userId)
             return res.status(401).json({ error: "Unauthorized" });
         const transactions = yield (0, transaction_service_1.getUserTransactions)(userId);
@@ -110,8 +108,7 @@ function handleTransactionError(res, error) {
     res.status(statusCode).json(Object.assign({ error: error.message || "Transaction operation failed" }, (error instanceof zod_1.z.ZodError && { details: error.errors })));
 }
 const checkUserJoined = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
-    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    const userId = req.user.id;
     const eventId = Number(req.query.eventId);
     const existing = yield prisma_1.prisma.transaction.findFirst({
         where: { userId, eventId },
@@ -120,9 +117,8 @@ const checkUserJoined = (req, res) => __awaiter(void 0, void 0, void 0, function
 });
 exports.checkUserJoined = checkUserJoined;
 const getMyEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     try {
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        const userId = req.user.id;
         const transactions = yield prisma_1.prisma.transaction.findMany({
             where: { userId },
             include: { event: true },
@@ -136,9 +132,8 @@ const getMyEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 });
 exports.getMyEvents = getMyEvents;
 const getOrganizerTransactions = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     try {
-        const organizerId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        const organizerId = req.user.id;
         if (!organizerId)
             return res.status(401).json({ message: "Unauthorized" });
         const transactions = yield prisma_1.prisma.transaction.findMany({
