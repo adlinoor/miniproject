@@ -1,97 +1,107 @@
-# 🎉 Mini Project API
+# 🎯 Mini Project API – Event Management System
 
-Repository ini merupakan backend API untuk aplikasi manajemen event berbasis role (Customer & Organizer), dilengkapi dengan sistem autentikasi, referral, dashboard event, transaksi, dan notifikasi. Dibangun dengan **Node.js**, **Express**, **Prisma**, dan **PostgreSQL**.
+Backend API untuk aplikasi manajemen event berbasis peran (Customer & Organizer), dilengkapi fitur:
+- Autentikasi & otorisasi
+- Sistem referral & hadiah
+- Dashboard event untuk organizer
+- Transaksi & kupon hadiah
 
-## 🚀 Fitur Utama
+Dibangun menggunakan: **Node.js**, **Express**, **Prisma**, dan **PostgreSQL**.
 
-### 🔐 1. User Authentication & Authorization
-- Register & login (JWT-based)
-- Middleware otorisasi berdasarkan peran (`CUSTOMER`, `ORGANIZER`)
-- Validasi input menggunakan Zod
+---
 
-### 🎁 2. Referral System & User Profile
-- Referral code unik pada saat registrasi
-- Poin referral & hadiah
-- Halaman profil dengan informasi user, referral, dan hadiah
+## ✨ Fitur Utama
 
-### 📅 3. Event Management Dashboard
-- Organizer dapat membuat, mengedit, dan menghapus event
-- Customer dapat melihat detail event dan bergabung
-- Fitur daftar peserta dan notifikasi pemenang kupon
+### 1. Autentikasi & Otorisasi
+- Register & login menggunakan JWT
+- Middleware berdasarkan role (`CUSTOMER`, `ORGANIZER`)
+- Validasi form dengan Zod
 
-### 💸 4. Transaction & Coupon System
-- Simulasi transaksi event (join event)
-- Kupon acak sebagai hadiah
-- Sistem kadaluarsa kupon otomatis (cron job)
+### 2. Sistem Referral & Profil
+- Kode referral saat registrasi
+- Poin & hadiah berdasarkan referral
+- Informasi profil pengguna lengkap
 
-## 🛠️ Tech Stack
+### 3. Manajemen Event (Organizer)
+- Buat, edit, dan hapus event
+- Lihat daftar peserta
+- Kirim notifikasi pemenang kupon
 
-| Teknologi     | Deskripsi                     |
-|---------------|-------------------------------|
-| Node.js       | Runtime JavaScript            |
-| Express.js    | Framework HTTP ringan         |
-| Prisma ORM    | Database ORM untuk PostgreSQL |
-| PostgreSQL    | Database relasional           |
-| Zod           | Validasi input                |
-| JWT           | Autentikasi berbasis token    |
-| Cron          | Jadwal otomatis sistem kupon  |
+### 4. Transaksi & Kupon Hadiah
+- Customer dapat join event
+- Kupon diundi secara acak
+- Cron job untuk cek kupon kadaluarsa
+
+---
+
+## ⚙️ Teknologi
+
+- **Node.js** + **Express** — Server & routing
+- **PostgreSQL** + **Prisma** — Database & ORM
+- **Zod** — Validasi input
+- **JWT** — Autentikasi token
+- **Cron** — Jadwal otomatis (kupon)
+
+---
 
 ## 📁 Struktur Folder
 
-📦src
-┣ 📂controllers # Handler endpoint
-┣ 📂middlewares # Middleware auth & error
-┣ 📂routes # Routing untuk fitur
-┣ 📂services # Logika bisnis & database access
-┣ 📂utils # Helper & cron job
-┗ 📜app.ts # Konfigurasi express
+```
+src/
+├── controllers     # Handler untuk setiap fitur
+├── middlewares     # Autentikasi, error handling
+├── routes          # Routing modular
+├── services        # Logika bisnis
+├── utils           # Helper + cron job
+└── app.ts          # Setup express app
+```
 
-bash
-Copy
-Edit
+---
 
-## ⚙️ Cara Menjalankan Lokal
+## 🚀 Cara Menjalankan Lokal
 
-### 1. Clone repo ini
-```bash
-git clone https://github.com/adlinoor/miniproject-api.git
-cd miniproject-api
-2. Install dependencies
-bash
-Copy
-Edit
-npm install
-3. Setup environment
-Buat file .env dan isi seperti berikut:
+1. **Clone & install dependencies**
+   ```bash
+   git clone https://github.com/adlinoor/miniproject-api.git
+   cd miniproject-api
+   npm install
+   ```
 
-ini
-Copy
-Edit
-DATABASE_URL="postgresql://USERNAME:PASSWORD@localhost:5432/DATABASE_NAME"
-JWT_SECRET="your_jwt_secret"
-PORT=8080
-4. Migrasi dan seeding database
-bash
-Copy
-Edit
-npx prisma migrate dev
-npx prisma db seed
-5. Jalankan server
-bash
-Copy
-Edit
-npm run dev
-Server akan berjalan di http://localhost:8080.
+2. **Buat file `.env`**
+   ```env
+   DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/DATABASE"
+   JWT_SECRET="your_secret_key"
+   PORT=8080
+   ```
 
-🧪 Testing
+3. **Migrasi & seeding database**
+   ```bash
+   npx prisma migrate dev
+   npx prisma db seed
+   ```
+
+4. **Jalankan server**
+   ```bash
+   npm run dev
+   ```
+
+---
+
+## 🧪 Testing
+
 Unit test tersedia untuk fitur utama:
-
-bash
-Copy
-Edit
+```bash
 npm run test
-👨‍💻 Kontributor
-@adlinoor @rianmumtaz12
+```
 
-📄 Lisensi
-Proyek ini menggunakan lisensi MIT.
+---
+
+## 👤 Kontributor
+
+- [@adlinoor](https://github.com/adlinoor)
+- [@rianmumtaz12](https://github.com/rianmumtaz12)
+---
+
+## 📄 Lisensi
+
+Proyek ini dilisensikan di bawah MIT License.
