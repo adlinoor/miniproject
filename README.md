@@ -1,6 +1,6 @@
 # 🎯 Mini Project API – Event Management System
 
-Backend API untuk aplikasi manajemen event berbasis peran (Customer & Organizer), dilengkapi fitur:
+Backend API untuk aplikasi manajemen event berbasis peran (**Customer** & **Organizer**), dengan fitur:
 - Autentikasi & otorisasi
 - Sistem referral & hadiah
 - Dashboard event untuk organizer
@@ -14,8 +14,8 @@ Dibangun menggunakan: **Node.js**, **Express**, **Prisma**, dan **PostgreSQL**.
 
 ### 1. Autentikasi & Otorisasi
 - Register & login menggunakan JWT
-- Middleware berdasarkan role (`CUSTOMER`, `ORGANIZER`)
-- Validasi form dengan Zod
+- Middleware berdasarkan role (`customer`, `organizer`)
+- Validasi input menggunakan Zod
 
 ### 2. Sistem Referral & Profil
 - Kode referral saat registrasi
@@ -28,19 +28,19 @@ Dibangun menggunakan: **Node.js**, **Express**, **Prisma**, dan **PostgreSQL**.
 - Kirim notifikasi pemenang kupon
 
 ### 4. Transaksi & Kupon Hadiah
-- Customer dapat join event
+- Customer dapat bergabung pada event
 - Kupon diundi secara acak
-- Cron job untuk cek kupon kadaluarsa
+- Cron job otomatis untuk mengecek kupon yang kadaluarsa
 
 ---
 
 ## ⚙️ Teknologi
 
-- **Node.js** + **Express** — Server & routing
+- **Node.js** + **Express** — Backend & routing
 - **PostgreSQL** + **Prisma** — Database & ORM
 - **Zod** — Validasi input
 - **JWT** — Autentikasi token
-- **Cron** — Jadwal otomatis (kupon)
+- **Cron** — Penjadwalan otomatis
 
 ---
 
@@ -49,41 +49,63 @@ Dibangun menggunakan: **Node.js**, **Express**, **Prisma**, dan **PostgreSQL**.
 ```
 src/
 ├── controllers     # Handler untuk setiap fitur
-├── middlewares     # Autentikasi, error handling
-├── routes          # Routing modular
-├── services        # Logika bisnis
-├── utils           # Helper + cron job
-└── app.ts          # Setup express app
+├── middlewares     # Middleware otentikasi & error handler
+├── routes          # Modular route
+├── services        # Logika bisnis & akses database
+├── utils           # Helper dan cron job
+└── app.ts          # Inisialisasi express app
 ```
 
 ---
 
-## 🚀 Cara Menjalankan Lokal
+## 🚀 Cara Menjalankan Secara Lokal
 
-1. **Clone & install dependencies**
-   ```bash
-   git clone https://github.com/adlinoor/miniproject-api.git
-   cd miniproject-api
-   npm install
-   ```
+### 1. Clone & Install Dependencies
+```bash
+git clone https://github.com/adlinoor/miniproject-api.git
+cd miniproject-api
+npm install
+```
 
-2. **Buat file `.env`**
-   ```env
-   DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/DATABASE"
-   JWT_SECRET="your_secret_key"
-   PORT=8080
-   ```
+### 2. Buat File `.env`
+```env
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/DATABASE"
+JWT_SECRET="your_secret_key"
+PORT=8080
+```
 
-3. **Migrasi & seeding database**
-   ```bash
-   npx prisma migrate dev
-   npx prisma db seed
-   ```
+### 3. Migrasi & Seeding Database
+```bash
+npx prisma migrate dev
+npx prisma db seed
+```
 
-4. **Jalankan server**
-   ```bash
-   npm run dev
-   ```
+### 4. Jalankan Server Development
+```bash
+npm run dev
+```
+
+### 5. Jalankan untuk Deployment (Vercel / Serverless)
+Untuk deployment ke platform seperti **Vercel**, gunakan:
+
+```bash
+npm start
+```
+
+Script `start` akan menjalankan:
+```bash
+npm run build && node dist/app.js
+```
+
+Pastikan hasil build tersedia:
+```bash
+npm run build
+```
+
+> **Catatan untuk Vercel**:
+> - **Build Command**: `npm run build`
+> - **Start Command**: `npm start`
+> - Entry point: `dist/app.js` (hasil build dari `src/app.ts`)
 
 ---
 
@@ -100,6 +122,7 @@ npm run test
 
 - [@adlinoor](https://github.com/adlinoor)
 - [@rianmumtaz12](https://github.com/rianmumtaz12)
+
 ---
 
 ## 📄 Lisensi
