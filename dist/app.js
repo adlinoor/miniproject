@@ -27,6 +27,7 @@ const review_routers_1 = __importDefault(require("./routers/review.routers"));
 const transaction_routers_1 = __importDefault(require("./routers/transaction.routers"));
 const user_routers_1 = __importDefault(require("./routers/user.routers"));
 const cloudinary_service_1 = require("./services/cloudinary.service");
+const statistic_routers_1 = __importDefault(require("./routers/statistic.routers"));
 // Load environment variables
 dotenv_1.default.config();
 // Validate required env vars
@@ -70,8 +71,9 @@ app.use(cloudinary_service_1.upload.single("file"));
 app.use("/api/auth", auth_routers_1.default);
 app.use("/api/events", event_routers_1.default);
 app.use("/api/reviews", review_routers_1.default);
+app.use("/api/statistics", statistic_routers_1.default);
 app.use("/api/transactions", transaction_routers_1.default);
-app.use("/api/user", user_routers_1.default);
+app.use("/api/users", user_routers_1.default);
 // Health check
 app.get("/api/health", (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {

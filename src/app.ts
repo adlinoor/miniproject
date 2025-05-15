@@ -13,6 +13,7 @@ import reviewRouter from "./routers/review.routers";
 import transactionRouter from "./routers/transaction.routers";
 import userRouter from "./routers/user.routers";
 import { upload } from "./services/cloudinary.service";
+import statisticRouter from "./routers/statistic.routers";
 
 // Load environment variables
 dotenv.config();
@@ -66,8 +67,9 @@ app.use(upload.single("file"));
 app.use("/api/auth", authRouter);
 app.use("/api/events", eventRouter);
 app.use("/api/reviews", reviewRouter);
+app.use("/api/statistics", statisticRouter);
 app.use("/api/transactions", transactionRouter);
-app.use("/api/user", userRouter);
+app.use("/api/users", userRouter);
 
 // Health check
 app.get("/api/health", async (_req, res) => {

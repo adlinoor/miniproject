@@ -15,17 +15,28 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getEventStatistics = void 0;
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const getEventStatistics = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     try {
-        const organizerId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        const organizerId = res.locals.user.id;
         const { eventId } = req.params;
         const filter = {
             event: {
                 organizerId,
             },
         };
+        // Validasi eventId jika disediakan
         if (eventId) {
-            filter.eventId = parseInt(eventId, 10);
+            const event = yield prisma_1.default.event.findFirst({
+                where: {
+                    id: parseInt(eventId, 10),
+                    organizerId,
+                },
+            });
+            if (!event) {
+                return res
+                    .status(403)
+                    .json({ message: "Unauthorized access to event." });
+            }
+            filter.eventId = event.id;
         }
         const transactions = yield prisma_1.default.transaction.findMany({
             where: Object.assign(Object.assign({}, filter), { status: "DONE" }),
@@ -35,10 +46,9 @@ const getEventStatistics = (req, res) => __awaiter(void 0, void 0, void 0, funct
                 quantity: true,
             },
         });
-        // 🧠 Group data by date
         const dailyStats = {};
         for (const tx of transactions) {
-            const dateKey = tx.createdAt.toISOString().split("T")[0]; // format YYYY-MM-DD
+            const dateKey = tx.createdAt.toISOString().split("T")[0];
             if (!dailyStats[dateKey]) {
                 dailyStats[dateKey] = { total: 0, count: 0, quantity: 0 };
             }

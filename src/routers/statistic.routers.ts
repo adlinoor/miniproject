@@ -1,11 +1,13 @@
 import { Router } from "express";
 import { getEventStatistics } from "../controllers/statistic.controller";
-import { authenticate } from "../middleware/auth.middleware";
-import { authorizeRoles } from "../middleware/auth.middleware";
+import { authenticate, authorizeRoles } from "../middleware/auth.middleware";
 
 const router = Router();
 
+// 📊 Statistik semua event milik organizer
 router.get("/", authenticate, authorizeRoles("ORGANIZER"), getEventStatistics);
+
+// 📊 Statistik spesifik untuk satu event
 router.get(
   "/:eventId",
   authenticate,
