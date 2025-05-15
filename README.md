@@ -1,59 +1,97 @@
-# MiniProject API
+# 🎉 Mini Project API
 
-A simple API project for managing basic data operations.
+Repository ini merupakan backend API untuk aplikasi manajemen event berbasis role (Customer & Organizer), dilengkapi dengan sistem autentikasi, referral, dashboard event, transaksi, dan notifikasi. Dibangun dengan **Node.js**, **Express**, **Prisma**, dan **PostgreSQL**.
 
-## Table of Contents
-- Features
-- Installation
-- Usage
-- API Endpoints
-- Contributing
-- License
+## 🚀 Fitur Utama
 
-## Features
-- Basic CRUD operations
-- Simple RESTful API structure
-- Easy to set up and use
+### 🔐 1. User Authentication & Authorization
+- Register & login (JWT-based)
+- Middleware otorisasi berdasarkan peran (`CUSTOMER`, `ORGANIZER`)
+- Validasi input menggunakan Zod
 
-## Installation
+### 🎁 2. Referral System & User Profile
+- Referral code unik pada saat registrasi
+- Poin referral & hadiah
+- Halaman profil dengan informasi user, referral, dan hadiah
 
-1. Clone the repository:
+### 📅 3. Event Management Dashboard
+- Organizer dapat membuat, mengedit, dan menghapus event
+- Customer dapat melihat detail event dan bergabung
+- Fitur daftar peserta dan notifikasi pemenang kupon
+
+### 💸 4. Transaction & Coupon System
+- Simulasi transaksi event (join event)
+- Kupon acak sebagai hadiah
+- Sistem kadaluarsa kupon otomatis (cron job)
+
+## 🛠️ Tech Stack
+
+| Teknologi     | Deskripsi                     |
+|---------------|-------------------------------|
+| Node.js       | Runtime JavaScript            |
+| Express.js    | Framework HTTP ringan         |
+| Prisma ORM    | Database ORM untuk PostgreSQL |
+| PostgreSQL    | Database relasional           |
+| Zod           | Validasi input                |
+| JWT           | Autentikasi berbasis token    |
+| Cron          | Jadwal otomatis sistem kupon  |
+
+## 📁 Struktur Folder
+
+📦src
+┣ 📂controllers # Handler endpoint
+┣ 📂middlewares # Middleware auth & error
+┣ 📂routes # Routing untuk fitur
+┣ 📂services # Logika bisnis & database access
+┣ 📂utils # Helper & cron job
+┗ 📜app.ts # Konfigurasi express
+
+bash
+Copy
+Edit
+
+## ⚙️ Cara Menjalankan Lokal
+
+### 1. Clone repo ini
 ```bash
 git clone https://github.com/adlinoor/miniproject-api.git
 cd miniproject-api
-```
-
-2. Install dependencies:
-```bash
+2. Install dependencies
+bash
+Copy
+Edit
 npm install
-```
+3. Setup environment
+Buat file .env dan isi seperti berikut:
 
-3. Start the server:
-```bash
-npm start
-```
+ini
+Copy
+Edit
+DATABASE_URL="postgresql://USERNAME:PASSWORD@localhost:5432/DATABASE_NAME"
+JWT_SECRET="your_jwt_secret"
+PORT=8080
+4. Migrasi dan seeding database
+bash
+Copy
+Edit
+npx prisma migrate dev
+npx prisma db seed
+5. Jalankan server
+bash
+Copy
+Edit
+npm run dev
+Server akan berjalan di http://localhost:8080.
 
-## Usage
-The API will be running on `http://localhost:8080` by default.
+🧪 Testing
+Unit test tersedia untuk fitur utama:
 
-## API Endpoints
+bash
+Copy
+Edit
+npm run test
+👨‍💻 Kontributor
+@adlinoor @rianmumtaz12
 
-### Users
-- `GET /users` - Get all users
-- `GET /users/:id` - Get a specific user
-- `POST /users` - Create a new user
-- `PUT /users/:id` - Update a user
-- `DELETE /users/:id` - Delete a user
-
-### Products
-- `GET /products` - Get all products
-- `GET /products/:id` - Get a specific product
-- `POST /products` - Create a new product
-- `PUT /products/:id` - Update a product
-- `DELETE /products/:id` - Delete a product
-
-## Contributing
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
-## License
-[MIT](https://choosealicense.com/licenses/mit/)
+📄 Lisensi
+Proyek ini menggunakan lisensi MIT.
