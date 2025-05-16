@@ -32,12 +32,6 @@ const router = Router();
 router.get("/", getEvents);
 
 router.get("/:id", validateIdParam("id"), getEventById);
-router.get(
-  "/:id/attendees",
-  authenticate,
-  authorizeRoles("ORGANIZER"),
-  getEventAttendees
-);
 
 // ==============================
 // 🔒 Protected Routes (ORGANIZER)
@@ -49,6 +43,14 @@ router.get(
   authenticate,
   authorizeRoles(Role.ORGANIZER),
   getEventsByOrganizer
+);
+
+// Get specific event total attendees owned by organizer
+router.get(
+  "/:id/attendees",
+  authenticate,
+  authorizeRoles("ORGANIZER"),
+  getEventAttendees
 );
 
 router.post(

@@ -87,13 +87,14 @@ exports.updateEventSchema = zod_1.z.object({
         .optional(),
 });
 const createEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+    var _a, _b;
     try {
         const { title, description, startDate, endDate, location, category, price, availableSeats, ticketTypes, } = req.body;
         const organizerId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
         if (!organizerId) {
             return res.status(401).json({ message: "Unauthorized" });
         }
+        const imageUrl = (_b = req.body.imageUrl) !== null && _b !== void 0 ? _b : null;
         const event = yield prisma_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
             const newEvent = yield tx.event.create({
                 data: {
@@ -108,6 +109,14 @@ const createEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                     organizerId,
                 },
             });
+            if (imageUrl) {
+                yield tx.image.create({
+                    data: {
+                        url: imageUrl,
+                        eventId: newEvent.id,
+                    },
+                });
+            }
             if (ticketTypes && ticketTypes.length > 0) {
                 yield tx.ticket.createMany({
                     data: ticketTypes.map((ticket) => (Object.assign({ eventId: newEvent.id }, ticket))),
@@ -280,6 +289,9 @@ const updateEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             updateData.startDate = new Date(updateData.startDate);
         if (updateData.endDate)
             updateData.endDate = new Date(updateData.endDate);
+        if (req.body.imageUrl) {
+            updateData.imageUrl = req.body.imageUrl;
+        }
         const event = yield prisma_1.default.event.update({
             where: { id: eventId },
             data: updateData,
