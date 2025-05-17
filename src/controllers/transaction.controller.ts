@@ -7,6 +7,8 @@ import {
 } from "../services/transaction.service";
 import { TransactionStatus } from "@prisma/client";
 import { z } from "zod";
+import { Transaction } from "@prisma/client";
+import prisma from "../lib/prisma";
 
 export const transactionSchema = z.object({
   eventId: z.number().min(1),
@@ -113,3 +115,50 @@ function handleTransactionError(res: Response, error: any) {
     ...(error instanceof z.ZodError && { details: error.errors }),
   });
 }
+
+export const uploadPaymentProof = async (req: Request, res: Response) => {
+  try {
+    const transactionId = parseInt(req.params.id, 10);
+    const file = req.file;
+
+    if (!file) {
+      return res
+        .status(400)
+        .json({ message: "Payment proof file is required" });
+    }
+
+    const transaction = await prisma.transaction.findUnique({
+      where: { id: transactionId },
+    });
+
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+
+    if (transaction.status !== "WAITING_FOR_PAYMENT") {
+      return res.status(400).json({
+        message:
+          "Payment proof can only be uploaded when status is WAITING_FOR_PAYMENT",
+      });
+    }
+
+    const updatedTransaction = await prisma.transaction.update({
+      where: { id: transactionId },
+      data: {
+        paymentProof: file.path,
+        status: "WAITING_FOR_ADMIN_CONFIRMATION",
+      },
+    });
+
+    return res.status(200).json({
+      message: "Payment proof uploaded successfully",
+      transaction: updatedTransaction,
+    });
+  } catch (error: any) {
+    console.error("Upload payment proof error:", error);
+    return res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
