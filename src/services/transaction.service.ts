@@ -233,6 +233,19 @@ async function restoreResources(tx: any, transaction: any) {
       },
     });
   }
+
+  // Restore voucher if used
+  if (transaction.voucherCode) {
+    await tx.voucher.updateMany({
+      where: {
+        code: transaction.voucherCode,
+        eventId: transaction.eventId,
+      },
+      data: {
+        isUsed: false,
+      },
+    });
+  }
 }
 
 export const checkTransactionExpirations = async () => {

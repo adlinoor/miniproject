@@ -17,7 +17,7 @@ export interface ILoginParam {
 export interface UserPayload {
   id: number;
   email: string;
-  role: string;
+  role: "CUSTOMER" | "ORGANIZER";
   first_name: string;
   last_name: string;
 }
