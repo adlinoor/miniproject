@@ -94,6 +94,9 @@ app.get("/api/health", async (_req, res) => {
 // Global error handler
 app.use(errorHandler);
 
+// Jalankan semua scheduled cron jobs
+import "./utils/cron";
+
 // ✅ Untuk Vercel (serverless)
 export default app;
 
@@ -104,6 +107,3 @@ if (require.main === module) {
     console.log(`🚀 Server listening on http://localhost:${PORT}`);
   });
 }
-
-// Jalankan semua scheduled cron jobs
-import "./utils/cron";
