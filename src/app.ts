@@ -94,6 +94,8 @@ app.get("/api/health", async (_req, res) => {
 // Global error handler
 app.use(errorHandler);
 
+import "./utils/cron";
+
 // ✅ Untuk Vercel (serverless)
 export default app;
 
