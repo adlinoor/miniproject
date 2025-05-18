@@ -45,7 +45,7 @@ const app = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: "https://miniproject-web.vercel.app",
     credentials: true,
   })
 );
