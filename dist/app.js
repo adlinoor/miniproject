@@ -53,7 +53,7 @@ const app = (0, express_1.default)();
 // ======================
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)({
-    origin: process.env.FRONTEND_URL,
+    origin: process.env.FRONTEND_URL || "miniproject-web.vercel.app",
     credentials: true,
 }));
 app.use((0, express_rate_limit_1.rateLimit)({
