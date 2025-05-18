@@ -104,3 +104,6 @@ if (require.main === module) {
     console.log(`🚀 Server listening on http://localhost:${PORT}`);
   });
 }
+
+// Jalankan semua scheduled cron jobs
+import "./utils/cron";
