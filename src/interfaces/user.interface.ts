@@ -13,3 +13,11 @@ export interface ILoginParam {
   email: string;
   password: string;
 }
+
+export interface UserPayload {
+  id: number;
+  email: string;
+  role: string;
+  first_name: string;
+  last_name: string;
+}

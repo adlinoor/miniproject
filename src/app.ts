@@ -94,4 +94,13 @@ app.get("/api/health", async (_req, res) => {
 // Global error handler
 app.use(errorHandler);
 
+// ✅ Untuk Vercel (serverless)
 export default app;
+
+// ✅ Untuk development lokal (npm run dev)
+if (require.main === module) {
+  const PORT = process.env.PORT || 8080;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server listening on http://localhost:${PORT}`);
+  });
+}

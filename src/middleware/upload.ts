@@ -1,6 +1,9 @@
 import multer from "multer";
 import path from "path";
+import { Request } from "express";
+import { UserPayload } from "../interfaces/user.interface";
 
+// Gunakan storage disk
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "./uploads/payment_proofs/");
@@ -11,8 +14,9 @@ const storage = multer.diskStorage({
   },
 });
 
+// Filter jenis file yang diizinkan
 const fileFilter = (
-  req: Express.Request,
+  req: Request, // Ini akan membaca tipe Request yang sudah di-extend via custom.d.ts
   file: Express.Multer.File,
   cb: multer.FileFilterCallback
 ) => {
@@ -30,10 +34,11 @@ const fileFilter = (
   }
 };
 
+// Inisialisasi multer dengan limit file
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 5 * 1024 * 1024 }, // Max 5MB
 });
 
 export default upload;
