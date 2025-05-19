@@ -33,15 +33,20 @@ export const register = async (req: Request, res: Response) => {
   try {
     const user = await authService.RegisterService(req.body);
 
-    // ✅ Reuse login logic to generate token + full user
     const { token, user: fullUser } = await authService.LoginService({
       email: user.email,
       password: req.body.password,
     });
 
+    res.cookie("access_token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    });
+
     res.status(201).json({
       user: fullUser,
-      token,
+      message: "Registration successful",
     });
   } catch (error) {
     res.status(400).json({
@@ -56,12 +61,17 @@ export const register = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
   try {
     const validatedData = loginSchema.parse(req.body);
-
     const result = await authService.LoginService(validatedData);
+
+    res.cookie("access_token", result.token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    });
 
     res.json({
       user: result.user,
-      token: result.token,
+      message: "Login successful",
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -91,7 +101,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
   }
 
   const token = crypto.randomBytes(32).toString("hex");
-  const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  const expires = new Date(Date.now() + 60 * 60 * 1000);
 
   await prisma.user.update({
     where: { id: user.id },
