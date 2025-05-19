@@ -41,24 +41,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __rest = (this && this.__rest) || function (s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                t[p[i]] = s[p[i]];
-        }
-    return t;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.resetPassword = exports.forgotPassword = exports.login = exports.register = exports.loginSchema = exports.registerSchema = void 0;
 const zod_1 = require("zod");
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const crypto_1 = __importDefault(require("crypto"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
@@ -82,29 +70,18 @@ exports.loginSchema = zod_1.z.object({
     password: zod_1.z.string().min(1, "Password is required"),
 });
 // ====================
-// 🔐 JWT TOKEN HELPER
-// ====================
-const generateToken = (user) => {
-    return jsonwebtoken_1.default.sign({
-        id: user.id,
-        email: user.email,
-        role: user.role,
-    }, process.env.SECRET_KEY, { expiresIn: "1h" });
-};
-// ====================
 // 👤 REGISTER
 // ====================
 const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = yield authService.RegisterService(req.body);
-        const token = generateToken({
-            id: user.id,
+        // ✅ Reuse login logic to generate token + full user
+        const { token, user: fullUser } = yield authService.LoginService({
             email: user.email,
-            role: user.role,
+            password: req.body.password,
         });
-        const { password } = user, userData = __rest(user, ["password"]);
         res.status(201).json({
-            user: userData,
+            user: fullUser,
             token,
         });
     }
