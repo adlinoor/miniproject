@@ -5,14 +5,6 @@ import { UserPayload } from "../interfaces/user.interface";
 
 dotenv.config();
 
-interface DecodedUser {
-  id: number;
-  email: string;
-  role: string;
-  first_name?: string;
-  last_name?: string;
-}
-
 const secret = process.env.SECRET_KEY;
 
 if (!secret) {
@@ -28,12 +20,15 @@ export const authenticate = (
   next: NextFunction
 ) => {
   const authHeader = req.headers.authorization;
+  const cookieToken = req.cookies?.access_token;
 
-  if (!authHeader?.startsWith("Bearer ")) {
+  const token = authHeader?.startsWith("Bearer ")
+    ? authHeader.split(" ")[1]
+    : cookieToken;
+
+  if (!token) {
     return res.status(401).json({ message: "Unauthorized: Token missing" });
   }
-
-  const token = authHeader.split(" ")[1];
 
   try {
     const decoded = jwt.verify(token, secret) as UserPayload;
@@ -50,11 +45,9 @@ export const authenticate = (
 // ===============================
 export const authorizeRoles = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (
-      !req.user ||
-      typeof req.user.role !== "string" ||
-      !roles.includes(req.user.role)
-    ) {
+    const user = req.user as UserPayload;
+
+    if (!user || !roles.includes(user.role)) {
       return res.status(403).json({
         message: "Forbidden: You do not have permission to access this route",
       });
