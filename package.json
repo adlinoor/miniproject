@@ -4,7 +4,7 @@
   "main": "src/app.ts",
   "scripts": {
     "start": "npm run build && node dist/app.js",
-    "dev": "nodemon --watch src --ext ts --exec ts-node src/app.ts",
+    "dev": "nodemon",
     "build": "tsc",
     "migrate": "prisma migrate dev",
     "postinstall": "prisma generate",
