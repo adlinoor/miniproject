@@ -12,10 +12,12 @@ cloudinary_1.v2.config({
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+// ⬇️ Gunakan memory storage untuk menyimpan file di RAM
 exports.upload = (0, multer_1.default)({
     storage: multer_1.default.memoryStorage(),
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
+// ⬇️ Upload file buffer langsung ke Cloudinary
 const uploadToCloudinary = (file) => {
     return new Promise((resolve, reject) => {
         const uploadStream = cloudinary_1.v2.uploader.upload_stream({ folder: "event-management" }, (error, result) => {

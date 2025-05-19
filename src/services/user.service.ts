@@ -1,8 +1,7 @@
 import prisma from "../lib/prisma";
 import { User } from "@prisma/client";
-import { v2 as cloudinary } from "cloudinary";
 
-// ✅ Ambil user berdasarkan ID
+// Ambil user berdasarkan ID
 export const getUserById = async (
   userId: number
 ): Promise<Partial<User> | null> => {
@@ -21,7 +20,7 @@ export const getUserById = async (
   });
 };
 
-// ✅ Update user dengan validasi & upload gambar jika ada
+// Update user
 export const updateUser = async (
   userId: number,
   data: {
@@ -47,6 +46,8 @@ export const updateUser = async (
     },
   });
 };
+
+// Ringkasan poin dan kupon
 export const getUserRewardSummary = async (userId: number) => {
   const now = new Date();
 

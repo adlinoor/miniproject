@@ -8,11 +8,13 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// ⬇️ Gunakan memory storage untuk menyimpan file di RAM
 export const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
 
+// ⬇️ Upload file buffer langsung ke Cloudinary
 export const uploadToCloudinary = (
   file: Express.Multer.File
 ): Promise<string> => {

@@ -14,7 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getUserRewardSummary = exports.updateUser = exports.getUserById = void 0;
 const prisma_1 = __importDefault(require("../lib/prisma"));
-// ✅ Ambil user berdasarkan ID
+// Ambil user berdasarkan ID
 const getUserById = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     return yield prisma_1.default.user.findUnique({
         where: { id: userId },
@@ -31,7 +31,7 @@ const getUserById = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     });
 });
 exports.getUserById = getUserById;
-// ✅ Update user dengan validasi & upload gambar jika ada
+// Update user
 const updateUser = (userId, data) => __awaiter(void 0, void 0, void 0, function* () {
     return yield prisma_1.default.user.update({
         where: { id: userId },
@@ -49,6 +49,7 @@ const updateUser = (userId, data) => __awaiter(void 0, void 0, void 0, function*
     });
 });
 exports.updateUser = updateUser;
+// Ringkasan poin dan kupon
 const getUserRewardSummary = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     const now = new Date();
     const [activePoints, coupons] = yield Promise.all([
