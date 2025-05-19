@@ -7,10 +7,13 @@ import {
   getEventById,
   updateEvent,
   deleteEvent,
-  createEventSchema,
-  updateEventSchema,
   getEventAttendees,
   getEventsByOrganizer,
+  getVouchersByEvent,
+  createVoucher,
+  createEventSchema,
+  updateEventSchema,
+  // createVoucherSchema, // jika pakai validasi Zod untuk voucher
 } from "../controllers/event.controller";
 
 import {
@@ -25,19 +28,23 @@ import { uploadImageAndAttachUrl } from "../middleware/uploadImageAndAttachUrl";
 
 const router = Router();
 
+//
 // ====================
 // 📂 Public Routes
 // ====================
+//
 
 router.get("/", getEvents);
 
 router.get("/:id", validateIdParam("id"), getEventById);
 
+//
 // ==============================
 // 🔒 Protected Routes (ORGANIZER)
 // ==============================
+//
 
-// Get events owned by organizer
+// Lihat semua event milik organizer
 router.get(
   "/organizer/my-events",
   authenticate,
@@ -45,34 +52,28 @@ router.get(
   getEventsByOrganizer
 );
 
-// Get specific event total attendees owned by organizer
+// Lihat daftar peserta event tertentu (khusus organizer pemilik)
 router.get(
   "/:id/attendees",
   authenticate,
-  authorizeRoles("ORGANIZER"),
+  authorizeRoles(Role.ORGANIZER),
+  validateIdParam("id"),
   getEventAttendees
 );
 
-router.post(
-  "/",
-  authenticate,
-  authorizeRoles(Role.ORGANIZER),
-  validateRequest(createEventSchema),
-  validateDates("startDate", "endDate"),
-  createEvent
-);
-
+// Buat event baru (upload image via multer)
 router.post(
   "/",
   authenticate,
   authorizeRoles(Role.ORGANIZER),
   upload.single("image"), // 💾 multer memory storage
-  uploadImageAndAttachUrl, // ☁️ attach Cloudinary URL to req.body.imageUrl
+  uploadImageAndAttachUrl, // ☁️ Cloudinary => inject req.body.imageUrl
   validateRequest(createEventSchema),
   validateDates("startDate", "endDate"),
   createEvent
 );
 
+// Update event
 router.put(
   "/:id",
   authenticate,
@@ -83,12 +84,36 @@ router.put(
   updateEvent
 );
 
+// Hapus event
 router.delete(
   "/:id",
   authenticate,
   authorizeRoles(Role.ORGANIZER),
   validateIdParam("id"),
   deleteEvent
+);
+
+//
+// 🎟 Voucher Management by Organizer
+//
+
+// Buat voucher untuk event
+router.post(
+  "/:eventId/vouchers",
+  authenticate,
+  authorizeRoles(Role.ORGANIZER),
+  validateIdParam("eventId"),
+  // validateRequest(createVoucherSchema), // aktifkan jika pakai validasi Zod
+  createVoucher
+);
+
+// Ambil semua voucher dari event
+router.get(
+  "/:eventId/vouchers",
+  authenticate,
+  authorizeRoles(Role.ORGANIZER),
+  validateIdParam("eventId"),
+  getVouchersByEvent
 );
 
 export default router;

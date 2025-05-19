@@ -1,26 +1,8 @@
 import prisma from "../lib/prisma";
 
-// ✅ Interface agar lebih mudah digunakan dan autocomplete-friendly
-export interface CreateEventParams {
-  title: string;
-  description: string;
-  startDate: Date;
-  endDate: Date;
-  location: string;
-  category: string;
-  price: number;
-  availableSeats: number;
-  organizerId: number;
-}
-
-export const createEvent = async (params: CreateEventParams) => {
-  return await prisma.event.create({
-    data: {
-      ...params,
-    },
-  });
-};
-
+/**
+ * Ambil daftar event berdasarkan filter ringan (jika dibutuhkan).
+ */
 export const getEvents = async (
   filters: {
     category?: string;
@@ -66,6 +48,9 @@ export const getEvents = async (
   });
 };
 
+/**
+ * Ambil detail satu event by ID lengkap dengan tiket, promo, dan review.
+ */
 export const getEventById = async (id: number) => {
   return await prisma.event.findUnique({
     where: { id },
@@ -88,34 +73,46 @@ export const getEventById = async (id: number) => {
   });
 };
 
-export const createPromotion = async (
-  eventId: number,
-  code: string,
-  discount: number,
-  startDate: Date,
-  endDate: Date,
-  maxUses?: number
-) => {
-  return await prisma.promotion.create({
-    data: {
+/**
+ * Ambil semua event milik organizer tertentu.
+ */
+export const getEventsByOrganizer = async (organizerId: number) => {
+  return await prisma.event.findMany({
+    where: { organizerId },
+    orderBy: { createdAt: "desc" },
+  });
+};
+
+/**
+ * Ambil peserta dari event tertentu (untuk dashboard organizer).
+ */
+export const getAttendeesByEvent = async (eventId: number) => {
+  return await prisma.transaction.findMany({
+    where: {
       eventId,
-      code,
-      discount,
-      startDate,
-      endDate,
-      maxUses,
+      status: { in: ["DONE", "WAITING_FOR_ADMIN_CONFIRMATION"] },
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          first_name: true,
+          last_name: true,
+          email: true,
+        },
+      },
+      details: {
+        include: { ticket: true },
+      },
     },
   });
 };
 
-export const getOrganizerStats = async (organizerId: number) => {
-  return await prisma.$queryRaw`
-    SELECT 
-      DATE_TRUNC('month', created_at) AS month,
-      COUNT(*) AS event_count,
-      SUM(available_seats) AS total_seats
-    FROM events
-    WHERE organizer_id = ${organizerId}
-    GROUP BY month
-  `;
+/**
+ * Ambil semua voucher milik suatu event.
+ */
+export const getVouchersByEvent = async (eventId: string) => {
+  return await prisma.promotion.findMany({
+    where: { eventId: parseInt(eventId) },
+  });
 };

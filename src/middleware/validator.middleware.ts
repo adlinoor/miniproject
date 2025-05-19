@@ -1,14 +1,15 @@
 import { Request, Response, NextFunction } from "express";
 import { AnyZodObject, ZodError } from "zod";
-import { z } from "zod";
 
+/**
+ * Validasi body request menggunakan Zod.
+ */
 export const validateRequest =
   (schema: AnyZodObject) =>
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Remove the nested 'body' wrapping
       const result = await schema.parseAsync(req.body);
-      req.body = result; // Replace body with validated data
+      req.body = result;
       next();
     } catch (error) {
       if (error instanceof ZodError) {
@@ -25,6 +26,9 @@ export const validateRequest =
     }
   };
 
+/**
+ * Validasi bahwa startDate < endDate dan format valid.
+ */
 export const validateDates =
   (startDateField: string, endDateField: string) =>
   (req: Request, res: Response, next: NextFunction) => {
@@ -54,6 +58,9 @@ export const validateDates =
     next();
   };
 
+/**
+ * Validasi parameter ID (harus integer > 0).
+ */
 export const validateIdParam = (paramName: string) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const id = parseInt(req.params[paramName], 10);
