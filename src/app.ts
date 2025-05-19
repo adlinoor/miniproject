@@ -8,6 +8,7 @@ import dotenv from "dotenv";
 import prisma from "./lib/prisma";
 import { errorHandler } from "./middleware/error.middleware";
 import authRouter from "./routers/auth.routers";
+import couponRouter from "./routers/coupon.routers";
 import eventRouter from "./routers/event.routers";
 import reviewRouter from "./routers/review.routers";
 import transactionRouter from "./routers/transaction.routers";
@@ -76,6 +77,7 @@ app.use(upload.single("file"));
 //       Routes
 // ======================
 app.use("/api/auth", authRouter);
+app.use("/coupons", couponRouter);
 app.use("/api/events", eventRouter);
 app.use("/api/promotions", promotionRouter);
 app.use("/api/reviews", reviewRouter);
