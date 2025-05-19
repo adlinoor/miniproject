@@ -38,6 +38,10 @@ for (const key of requiredEnvVars) {
 }
 
 const app = express();
+const whitelist = [
+  "https://miniproject-web.vercel.app",
+  "http://localhost:3000",
+];
 
 // ======================
 //      Middleware
@@ -45,7 +49,13 @@ const app = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: function (origin, callback) {
+      if (!origin || whitelist.includes(origin)) {
+        callback(null, origin);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
