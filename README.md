@@ -1,130 +1,53 @@
-# 🎯 Mini Project API – Event Management System
+# ARevents Backend (Express + Prisma)
 
-Backend API untuk aplikasi manajemen event berbasis peran (**Customer** & **Organizer**), dengan fitur:
-- Autentikasi & otorisasi
-- Sistem referral & hadiah
-- Dashboard event untuk organizer
-- Transaksi & kupon hadiah
+This is the backend of the ARevents application — provides API for event management, transactions, promotions, referrals, and role-based user access.
 
-Dibangun menggunakan: **Node.js**, **Express**, **Prisma**, dan **PostgreSQL**.
+## 🚀 Key Features
 
----
+- JWT Auth with Role (Customer / Organizer)
+- Referral System (Code, Points, Coupons)
+- Event CRUD with Cloudinary Image Upload
+- Event Voucher Management
+- Checkout + Payment Proof + Auto Status Update
+- Review & Rating System
+- Organizer Dashboard: Statistics, Attendees List
+- Scheduled Jobs: Auto Expiry for Transactions & Points
+- Full Route Protection & Input Validation
 
-## ✨ Fitur Utama
+## 🧪 Tech Stack
 
-### 1. Autentikasi & Otorisasi
-- Register & login menggunakan JWT
-- Middleware berdasarkan role (`CUSTOMER`, `ORGANIZER`)
-- Validasi input menggunakan Zod
+- Express.js
+- PostgreSQL + Prisma ORM
+- Cloudinary (Image Upload)
+- Nodemailer (Email Notifications)
+- Zod (Validation)
+- Multer (File Upload)
+- JWT (Authentication)
+- Cron (Task Scheduler)
 
-### 2. Sistem Referral & Profil
-- Kode referral saat registrasi
-- Poin & hadiah berdasarkan referral
-- Informasi profil pengguna lengkap
+## ⚙️ Local Setup
 
-### 3. Manajemen Event (Organizer)
-- Buat, edit, dan hapus event
-- Lihat daftar peserta
-- Kirim notifikasi pemenang kupon
-
-### 4. Transaksi & Kupon Hadiah
-- Customer dapat bergabung pada event
-- Kupon diundi secara acak
-- Cron job otomatis untuk mengecek kupon yang kadaluarsa
-
----
-
-## ⚙️ Teknologi
-
-- **Node.js** + **Express** — Backend & routing
-- **PostgreSQL** + **Prisma** — Database & ORM
-- **Zod** — Validasi input
-- **JWT** — Autentikasi token
-- **Cron** — Penjadwalan otomatis
-
----
-
-## 📁 Struktur Folder
-
-```
-src/
-├── controllers     # Handler untuk setiap fitur
-├── middlewares     # Middleware otentikasi & error handler
-├── routes          # Modular route
-├── services        # Logika bisnis & akses database
-├── utils           # Helper dan cron job
-└── app.ts          # Inisialisasi express app
-```
-
----
-
-## 🚀 Cara Menjalankan Secara Lokal
-
-### 1. Clone & Install Dependencies
 ```bash
-git clone https://github.com/adlinoor/miniproject-api.git
-cd miniproject-api
-npm install
+pnpm install
+pnpm dev
 ```
 
-### 2. Buat File `.env`
+Create `.env`:
+
 ```env
-DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/DATABASE"
-JWT_SECRET="your_secret_key"
-PORT=8080
+DATABASE_URL=postgres://...
+SECRET_KEY=your_jwt_secret
+FRONTEND_URL=http://localhost:3000
+
+CLOUDINARY_NAME=...
+CLOUDINARY_KEY=...
+CLOUDINARY_SECRET=...
+
+NODEMAILER_USER=...
+NODEMAILER_PASS=...
 ```
 
-### 3. Migrasi & Seeding Database
-```bash
-npx prisma migrate dev
-npx prisma db seed
-```
+## 🌐 Deployment
 
-### 4. Jalankan Server Development
-```bash
-npm run dev
-```
-
-### 5. Jalankan untuk Deployment (Vercel / Serverless)
-Untuk deployment ke platform seperti **Vercel**, gunakan:
-
-```bash
-npm start
-```
-
-Script `start` akan menjalankan:
-```bash
-npm run build && node dist/app.js
-```
-
-Pastikan hasil build tersedia:
-```bash
-npm run build
-```
-
-> **Catatan untuk Vercel**:
-> - **Build Command**: `npm run build`
-> - **Start Command**: `npm start`
-> - Entry point: `dist/app.js` (hasil build dari `src/app.ts`)
-
----
-
-## 🧪 Testing
-
-Unit test tersedia untuk fitur utama:
-```bash
-npm run test
-```
-
----
-
-## 👤 Kontributor
-
-- [@adlinoor](https://github.com/adlinoor)
-- [@rianmumtaz12](https://github.com/rianmumtaz12)
-
----
-
-## 📄 Lisensi
-
-Proyek ini dilisensikan di bawah MIT License.
+Backend is live at:  
+👉 https://miniproject-api-five.vercel.app
