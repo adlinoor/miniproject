@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { z } from "zod";
-import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import crypto from "crypto";
 import bcrypt from "bcrypt";
@@ -28,37 +27,20 @@ export const loginSchema = z.object({
 });
 
 // ====================
-// 🔐 JWT TOKEN HELPER
-// ====================
-const generateToken = (user: { id: number; email: string; role: Role }) => {
-  return jwt.sign(
-    {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-    },
-    process.env.SECRET_KEY!,
-    { expiresIn: "1h" }
-  );
-};
-
-// ====================
 // 👤 REGISTER
 // ====================
 export const register = async (req: Request, res: Response) => {
   try {
     const user = await authService.RegisterService(req.body);
 
-    const token = generateToken({
-      id: user.id,
+    // ✅ Reuse login logic to generate token + full user
+    const { token, user: fullUser } = await authService.LoginService({
       email: user.email,
-      role: user.role,
+      password: req.body.password,
     });
 
-    const { password, ...userData } = user;
-
     res.status(201).json({
-      user: userData,
+      user: fullUser,
       token,
     });
   } catch (error) {
