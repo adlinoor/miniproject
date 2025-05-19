@@ -39,10 +39,7 @@ for (const key of requiredEnvVars) {
 }
 
 const app = express();
-const whitelist = [
-  "https://miniproject-web.vercel.app",
-  "http://localhost:3000",
-];
+const whitelist = ["http://localhost:3000"];
 
 // ======================
 //      Middleware
