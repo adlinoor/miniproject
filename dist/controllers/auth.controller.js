@@ -81,8 +81,8 @@ const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         });
         res.cookie("access_token", token, {
             httpOnly: true,
-            secure: true,
-            sameSite: "none",
+            secure: false,
+            sameSite: "lax",
         });
         res.status(201).json({
             user: fullUser,
@@ -105,8 +105,8 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const result = yield authService.LoginService(validatedData);
         res.cookie("access_token", result.token, {
             httpOnly: true,
-            secure: true,
-            sameSite: "none",
+            secure: false,
+            sameSite: "lax",
         });
         res.json({
             user: result.user,
