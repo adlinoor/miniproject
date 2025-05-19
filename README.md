@@ -28,8 +28,8 @@ This is the backend of the ARevents application — provides API for event manag
 ## ⚙️ Local Setup
 
 ```bash
-pnpm install
-pnpm dev
+npm install
+npm run dev
 ```
 
 Create `.env`:
