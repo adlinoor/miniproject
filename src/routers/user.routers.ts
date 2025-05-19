@@ -7,25 +7,22 @@ const router = express.Router();
 
 /**
  * GET /api/users/me
- * Ambil profil pengguna yang sedang login.
  */
 router.get("/me", authenticate, userController.getProfile);
 
 /**
  * PUT /api/users/profile
- * Perbarui profil pengguna yang sedang login.
- * Mengizinkan upload gambar profil opsional (profilePicture).
+ * Bisa JSON biasa, atau multipart dengan file opsional
  */
 router.put(
   "/profile",
   authenticate,
-  upload.single("profilePicture"), // ⬅️ HARUS sama seperti field dari frontend
+  upload.single("profilePicture"),
   userController.updateProfile
 );
 
 /**
  * GET /api/users/rewards
- * Ambil ringkasan poin dan kupon pengguna.
  */
 router.get("/rewards", authenticate, userController.getRewardSummary);
 

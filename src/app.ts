@@ -24,9 +24,9 @@ dotenv.config();
 const requiredEnvVars = [
   "SECRET_KEY",
   "FRONTEND_URL",
-  "CLOUDINARY_NAME",
-  "CLOUDINARY_KEY",
-  "CLOUDINARY_SECRET",
+  "CLOUDINARY_CLOUD_NAME",
+  "CLOUDINARY_API_KEY",
+  "CLOUDINARY_API_SECRET",
   "NODEMAILER_USER",
   "NODEMAILER_PASS",
 ];
@@ -68,7 +68,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 app.use(cookieParser());
-app.use(upload.single("file"));
 
 // ======================
 //       Routes

@@ -49,7 +49,7 @@ exports.getRewardSummary = exports.updateProfile = exports.getProfile = void 0;
 const userService = __importStar(require("../services/user.service"));
 const zod_1 = require("zod");
 const bcrypt_1 = __importDefault(require("bcrypt"));
-const cloudinary_1 = require("../lib/cloudinary");
+const cloudinary_service_1 = require("../services/cloudinary.service");
 // ✅ Schema validasi untuk update profile
 const updateSchema = zod_1.z.object({
     first_name: zod_1.z.string().optional(),
@@ -88,16 +88,21 @@ const updateProfile = (req, res, next) => __awaiter(void 0, void 0, void 0, func
         if (!userId) {
             return res.status(401).json({ message: "Unauthorized" });
         }
+        // ✅ Validasi data menggunakan Zod
         const validatedData = updateSchema.parse(req.body);
         // ✅ Hash password jika diisi
         if (validatedData.password) {
             validatedData.password = yield bcrypt_1.default.hash(validatedData.password, 10);
         }
-        // ✅ Upload foto jika file diberikan
+        // ✅ Upload ke Cloudinary jika ada file
         if (req.file) {
-            const result = yield cloudinary_1.uploader.upload_stream_to_cloudinary(req.file.buffer);
-            validatedData.profilePicture = result.secure_url;
+            const profilePictureUrl = yield (0, cloudinary_service_1.uploadToCloudinary)(req.file);
+            validatedData.profilePicture = profilePictureUrl;
         }
+        if (req.body.removePicture === "true") {
+            validatedData.profilePicture = "";
+        }
+        // ✅ Update user via service
         const updatedUser = yield userService.updateUser(userId, validatedData);
         res.status(200).json({
             message: "Profile updated successfully",

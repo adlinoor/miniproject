@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import * as userService from "../services/user.service";
 import { z } from "zod";
 import bcrypt from "bcrypt";
-import { uploader } from "../lib/cloudinary";
+import { uploadToCloudinary } from "../services/cloudinary.service";
 
 // ✅ Schema validasi untuk update profile
 const updateSchema = z.object({
@@ -51,6 +51,7 @@ export const updateProfile = async (
       return res.status(401).json({ message: "Unauthorized" });
     }
 
+    // ✅ Validasi data menggunakan Zod
     const validatedData = updateSchema.parse(req.body);
 
     // ✅ Hash password jika diisi
@@ -58,14 +59,16 @@ export const updateProfile = async (
       validatedData.password = await bcrypt.hash(validatedData.password, 10);
     }
 
-    // ✅ Upload foto jika file diberikan
+    // ✅ Upload ke Cloudinary jika ada file
     if (req.file) {
-      const result = await uploader.upload_stream_to_cloudinary(
-        req.file.buffer
-      );
-      validatedData.profilePicture = result.secure_url;
+      const profilePictureUrl = await uploadToCloudinary(req.file);
+      validatedData.profilePicture = profilePictureUrl;
+    }
+    if (req.body.removePicture === "true") {
+      validatedData.profilePicture = "";
     }
 
+    // ✅ Update user via service
     const updatedUser = await userService.updateUser(userId, validatedData);
 
     res.status(200).json({
@@ -76,6 +79,7 @@ export const updateProfile = async (
     next(error);
   }
 };
+
 export const getRewardSummary = async (
   req: Request,
   res: Response,

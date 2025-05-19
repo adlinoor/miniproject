@@ -43,19 +43,15 @@ const cloudinary_service_1 = require("../services/cloudinary.service");
 const router = express_1.default.Router();
 /**
  * GET /api/users/me
- * Ambil profil pengguna yang sedang login.
  */
 router.get("/me", auth_middleware_1.authenticate, userController.getProfile);
 /**
  * PUT /api/users/profile
- * Perbarui profil pengguna yang sedang login.
- * Mengizinkan upload gambar profil opsional (profilePicture).
+ * Bisa JSON biasa, atau multipart dengan file opsional
  */
-router.put("/profile", auth_middleware_1.authenticate, cloudinary_service_1.upload.single("profilePicture"), // ⬅️ HARUS sama seperti field dari frontend
-userController.updateProfile);
+router.put("/profile", auth_middleware_1.authenticate, cloudinary_service_1.upload.single("profilePicture"), userController.updateProfile);
 /**
  * GET /api/users/rewards
- * Ambil ringkasan poin dan kupon pengguna.
  */
 router.get("/rewards", auth_middleware_1.authenticate, userController.getRewardSummary);
 exports.default = router;

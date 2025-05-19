@@ -106,6 +106,7 @@ const LoginService = (param) => __awaiter(void 0, void 0, void 0, function* () {
             first_name: user.first_name,
             last_name: user.last_name,
             role: user.role,
+            referralCode: user.referralCode,
             isVerified: user.isVerified,
         },
     };

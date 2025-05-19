@@ -31,10 +31,12 @@ export const loginSchema = z.object({
 // ====================
 export const register = async (req: Request, res: Response) => {
   try {
-    const user = await authService.RegisterService(req.body);
+    // ⬇️ Buat user baru
+    await authService.RegisterService(req.body);
 
+    // ⬇️ Langsung login ulang supaya dapat token dan user lengkap (dengan referralCode)
     const { token, user: fullUser } = await authService.LoginService({
-      email: user.email,
+      email: req.body.email,
       password: req.body.password,
     });
 
@@ -45,7 +47,7 @@ export const register = async (req: Request, res: Response) => {
     });
 
     res.status(201).json({
-      user: fullUser,
+      user: fullUser, // ✅ Sudah termasuk referralCode dari LoginService
       message: "Registration successful",
     });
   } catch (error) {

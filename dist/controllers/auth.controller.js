@@ -74,9 +74,11 @@ exports.loginSchema = zod_1.z.object({
 // ====================
 const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const user = yield authService.RegisterService(req.body);
+        // ⬇️ Buat user baru
+        yield authService.RegisterService(req.body);
+        // ⬇️ Langsung login ulang supaya dapat token dan user lengkap (dengan referralCode)
         const { token, user: fullUser } = yield authService.LoginService({
-            email: user.email,
+            email: req.body.email,
             password: req.body.password,
         });
         res.cookie("access_token", token, {
@@ -85,7 +87,7 @@ const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             sameSite: "lax",
         });
         res.status(201).json({
-            user: fullUser,
+            user: fullUser, // ✅ Sudah termasuk referralCode dari LoginService
             message: "Registration successful",
         });
     }

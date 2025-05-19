@@ -27,7 +27,6 @@ const event_routers_1 = __importDefault(require("./routers/event.routers"));
 const review_routers_1 = __importDefault(require("./routers/review.routers"));
 const transaction_routers_1 = __importDefault(require("./routers/transaction.routers"));
 const user_routers_1 = __importDefault(require("./routers/user.routers"));
-const cloudinary_service_1 = require("./services/cloudinary.service");
 const statistic_routers_1 = __importDefault(require("./routers/statistic.routers"));
 const promotion_routers_1 = __importDefault(require("./routers/promotion.routers"));
 // Load environment variables
@@ -36,9 +35,9 @@ dotenv_1.default.config();
 const requiredEnvVars = [
     "SECRET_KEY",
     "FRONTEND_URL",
-    "CLOUDINARY_NAME",
-    "CLOUDINARY_KEY",
-    "CLOUDINARY_SECRET",
+    "CLOUDINARY_CLOUD_NAME",
+    "CLOUDINARY_API_KEY",
+    "CLOUDINARY_API_SECRET",
     "NODEMAILER_USER",
     "NODEMAILER_PASS",
 ];
@@ -74,7 +73,6 @@ app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
 app.use((0, morgan_1.default)("dev"));
 app.use((0, cookie_parser_1.default)());
-app.use(cloudinary_service_1.upload.single("file"));
 // ======================
 //       Routes
 // ======================
