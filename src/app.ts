@@ -38,7 +38,6 @@ for (const key of requiredEnvVars) {
 }
 
 const app = express();
-const whitelist = ["http://localhost:3000"];
 
 // ======================
 //      Middleware
@@ -46,16 +45,11 @@ const whitelist = ["http://localhost:3000"];
 app.use(helmet());
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || whitelist.includes(origin)) {
-        callback(null, origin);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: true, // izinkan semua origin
     credentials: true,
   })
 );
+
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
