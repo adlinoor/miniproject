@@ -221,7 +221,7 @@ export const uploadPaymentProof = async (req: Request, res: Response) => {
     const updatedTransaction = await prisma.transaction.update({
       where: { id: transactionId },
       data: {
-        paymentProof: file.path,
+        paymentProof: req.body.imageUrl,
         status: "WAITING_FOR_ADMIN_CONFIRMATION",
       },
     });

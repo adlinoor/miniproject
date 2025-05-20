@@ -13,7 +13,6 @@ import eventRouter from "./routers/event.routers";
 import reviewRouter from "./routers/review.routers";
 import transactionRouter from "./routers/transaction.routers";
 import userRouter from "./routers/user.routers";
-import { upload } from "./services/cloudinary.service";
 import statisticRouter from "./routers/statistic.routers";
 import promotionRouter from "./routers/promotion.routers";
 

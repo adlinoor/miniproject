@@ -199,7 +199,7 @@ const uploadPaymentProof = (req, res) => __awaiter(void 0, void 0, void 0, funct
         const updatedTransaction = yield prisma_1.default.transaction.update({
             where: { id: transactionId },
             data: {
-                paymentProof: file.path,
+                paymentProof: req.body.imageUrl,
                 status: "WAITING_FOR_ADMIN_CONFIRMATION",
             },
         });

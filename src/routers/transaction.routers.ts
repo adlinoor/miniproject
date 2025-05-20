@@ -1,5 +1,8 @@
 import { Router } from "express";
 import { authenticate, authorizeRoles } from "../middleware/auth.middleware";
+import { Role } from "@prisma/client";
+import upload from "../middleware/upload";
+import { uploadImageAndAttachUrl } from "../middleware/uploadImageAndAttachUrl";
 import {
   checkUserJoined,
   createEventTransaction,
@@ -7,12 +10,18 @@ import {
   getOrganizerTransactions,
   getTransactionDetails,
   updateTransaction,
+  uploadPaymentProof,
 } from "../controllers/transaction.controller";
-import { Role } from "@prisma/client";
 
 const router = Router();
 
-// CUSTOMER: Buat transaksi event
+//
+// =======================
+//  CUSTOMER ROUTES
+// =======================
+//
+
+// Buat transaksi baru (checkout event)
 router.post(
   "/",
   authenticate,
@@ -20,13 +29,13 @@ router.post(
   createEventTransaction
 );
 
-// CUSTOMER: Cek detail transaksi (atau milik sendiri)
+// Lihat detail transaksi (milik sendiri)
 router.get("/:id", authenticate, getTransactionDetails);
 
-// CUSTOMER: Cek apakah sudah join event tertentu
+// Cek apakah user sudah join event tertentu
 router.get("/transactions/check", authenticate, checkUserJoined);
 
-// CUSTOMER: Lihat event yang diikuti
+// Lihat event yang sudah diikuti
 router.get(
   "/myevents",
   authenticate,
@@ -34,7 +43,23 @@ router.get(
   getMyEvents
 );
 
-// ORGANIZER: Lihat transaksi event yang mereka buat
+// Upload bukti pembayaran ke Cloudinary
+router.patch(
+  "/:id/payment-proof",
+  authenticate,
+  authorizeRoles(Role.CUSTOMER),
+  upload.single("paymentProof"),
+  uploadImageAndAttachUrl,
+  uploadPaymentProof
+);
+
+//
+// =======================
+//  ORGANIZER ROUTES
+// =======================
+//
+
+// Lihat semua transaksi dari event yang dibuat
 router.get(
   "/organizer",
   authenticate,
@@ -42,7 +67,7 @@ router.get(
   getOrganizerTransactions
 );
 
-// ORGANIZER: Update status transaksi (approve/reject)
+// Ubah status transaksi (approve/reject)
 router.put(
   "/:id/status",
   authenticate,
@@ -50,7 +75,13 @@ router.put(
   updateTransaction
 );
 
-// Tambahan umum: Update data transaksi (versi feature 1)
+//
+// =======================
+//  GENERAL / SHARED
+// =======================
+//
+
+// Update transaksi secara umum (fallback legacy / manual)
 router.put("/:id", authenticate, updateTransaction);
 
 export default router;
