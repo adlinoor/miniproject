@@ -92,6 +92,3 @@ npm run dev
 - Cek endpoint via Postman (dengan cookie)
 - Gunakan frontend [miniproject-web](https://github.com/adlinoor/miniproject-web)
 - Validasi file upload, role restriction, poin, dan referral
-
----
-
