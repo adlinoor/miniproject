@@ -146,7 +146,7 @@ model Transaction {
   pointsUsed      Int           @default(0)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-  expiresAt       DateTime
+  expiresAt       DateTime?
 
   @@index([userId, eventId]) // Composite index for faster queries
     @@index([status, expiresAt]) // Untuk cron job

@@ -8,6 +8,7 @@ import { TransactionStatus } from "@prisma/client";
 import { z } from "zod";
 import prisma from "../lib/prisma";
 
+// Validasi schema transaksi
 export const transactionSchema = z.object({
   eventId: z.number().min(1),
   quantity: z.number().min(1),
@@ -16,17 +17,17 @@ export const transactionSchema = z.object({
   ticketTypeId: z.number().min(1).optional(),
 });
 
+// Validasi update status
 export const transactionUpdateSchema = z.object({
   status: z.nativeEnum(TransactionStatus),
   paymentProof: z.string().optional(),
 });
 
+// Create Transaction
 export const createEventTransaction = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
     const validatedData = transactionSchema.parse({
       ...req.body,
@@ -38,7 +39,6 @@ export const createEventTransaction = async (req: Request, res: Response) => {
         : undefined,
     });
 
-    // Fixed: Pass parameters directly instead of using spread with Object.values()
     const transaction = await createTransaction(
       userId,
       validatedData.eventId,
@@ -54,6 +54,7 @@ export const createEventTransaction = async (req: Request, res: Response) => {
   }
 };
 
+// Get Transaction Detail
 export const getTransactionDetails = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -64,6 +65,7 @@ export const getTransactionDetails = async (req: Request, res: Response) => {
   }
 };
 
+// Update Transaction (Status or PaymentProof)
 export const updateTransaction = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -95,6 +97,7 @@ export const updateTransaction = async (req: Request, res: Response) => {
   }
 };
 
+// Get All Transactions by User
 export const getUserTransactionHistory = async (
   req: Request,
   res: Response
@@ -110,7 +113,7 @@ export const getUserTransactionHistory = async (
   }
 };
 
-// Reusable error handler
+// Error Handler
 function handleTransactionError(res: Response, error: any) {
   console.error("Transaction error:", error);
 
@@ -128,6 +131,7 @@ function handleTransactionError(res: Response, error: any) {
   });
 }
 
+// Cek apakah user sudah join event
 export const checkUserJoined = async (req: Request, res: Response) => {
   const userId = req.user?.id;
   const eventId = Number(req.query.eventId);
@@ -139,6 +143,7 @@ export const checkUserJoined = async (req: Request, res: Response) => {
   res.json({ joined: !!existing });
 };
 
+// Get My Joined Events
 export const getMyEvents = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
@@ -156,6 +161,7 @@ export const getMyEvents = async (req: Request, res: Response) => {
   }
 };
 
+// Organizer melihat semua transaksi event miliknya
 export const getOrganizerTransactions = async (req: Request, res: Response) => {
   try {
     const organizerId = req.user?.id;
@@ -185,6 +191,7 @@ export const getOrganizerTransactions = async (req: Request, res: Response) => {
   }
 };
 
+// Upload Payment Proof (khusus event berbayar)
 export const uploadPaymentProof = async (req: Request, res: Response) => {
   try {
     const transactionId = parseInt(req.params.id, 10);
