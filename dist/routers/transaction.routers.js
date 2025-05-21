@@ -20,7 +20,7 @@ router.post("/", auth_middleware_1.authenticate, (0, auth_middleware_1.authorize
 // Lihat detail transaksi (milik sendiri)
 router.get("/:id", auth_middleware_1.authenticate, transaction_controller_1.getTransactionDetails);
 // Cek apakah user sudah join event tertentu
-router.get("/transactions/check", auth_middleware_1.authenticate, transaction_controller_1.checkUserJoined);
+router.get("/check", auth_middleware_1.authenticate, transaction_controller_1.checkUserJoined);
 // Lihat event yang sudah diikuti
 router.get("/myevents", auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeRoles)(client_1.Role.CUSTOMER), transaction_controller_1.getMyEvents);
 // Upload bukti pembayaran ke Cloudinary
