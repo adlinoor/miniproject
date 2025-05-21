@@ -33,7 +33,7 @@ router.post(
 router.get("/:id", authenticate, getTransactionDetails);
 
 // Cek apakah user sudah join event tertentu
-router.get("/transactions/check", authenticate, checkUserJoined);
+router.get("/check", authenticate, checkUserJoined);
 
 // Lihat event yang sudah diikuti
 router.get(
