@@ -15,25 +15,25 @@ datasource db {
 }
 
 model User {
-  id                Int         @id @default(autoincrement())
-  first_name        String
-  last_name         String
-  email             String      @unique
-  password          String
-  role              Role        
-  referralCode      String?     @unique
-  referredBy        String?
-  userPoints        Int         @default(0)
-  profilePicture    String?
-  isVerified        Boolean     @default(false) // Added isVerified field
-  points            Point[]     // Relation to Point model
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  events            Event[]
-  transactions      Transaction[]
-  reviews           Review[]
-  coupons           Coupon[]
-  resetToken     String?   // ⬅️ Token sementara
+  id             Int           @id @default(autoincrement())
+  first_name     String
+  last_name      String
+  email          String        @unique
+  password       String
+  role           Role
+  referralCode   String?       @unique
+  referredBy     String?
+  userPoints     Int           @default(0)
+  profilePicture String?
+  isVerified     Boolean       @default(false) // Added isVerified field
+  points         Point[] // Relation to Point model
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  events         Event[]
+  transactions   Transaction[]
+  reviews        Review[]
+  coupons        Coupon[]
+  resetToken     String? // ⬅️ Token sementara
   resetTokenExp  DateTime? // ⬅️ Batas waktu token valid
 
   @@index([email]) // Index for faster queries by email
@@ -55,35 +55,35 @@ enum TransactionStatus {
 }
 
 model Point {
-  id          Int          @id @default(autoincrement())
-  userId      Int
-  user        User         @relation(fields: [userId], references: [id])
-  amount      Int
-  expiresAt   DateTime
-  createdAt   DateTime     @default(now())
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  amount    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
   @@index([userId]) // Index for faster queries by userId
 }
 
 model Event {
-  id              Int         @id @default(autoincrement())
-  title           String
-  description     String
-  startDate       DateTime
-  endDate         DateTime
-  location        String
-  category        String
-  price           Int
-  availableSeats  Int
-  images          Image[]
-  organizerId     Int
-  organizer       User         @relation(fields: [organizerId], references: [id])
-  tickets         Ticket[]
-  promotions      Promotion[]
-  transactions    Transaction[]
-  reviews         Review[]
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id             Int           @id @default(autoincrement())
+  title          String
+  description    String
+  startDate      DateTime
+  endDate        DateTime
+  location       String
+  category       String
+  price          Int
+  availableSeats Int
+  images         Image[]
+  organizerId    Int
+  organizer      User          @relation(fields: [organizerId], references: [id])
+  tickets        Ticket[]
+  promotions     Promotion[]
+  transactions   Transaction[]
+  reviews        Review[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   @@index([organizerId]) // Index for faster queries by organizer
   @@index([category]) // Index for faster queries by category
@@ -91,90 +91,89 @@ model Event {
 }
 
 model Image {
-  id        Int      @id @default(autoincrement())
-  url       String
-  eventId   Int
-  event     Event    @relation(fields: [eventId], references: [id])
+  id      Int    @id @default(autoincrement())
+  url     String
+  eventId Int
+  event   Event  @relation(fields: [eventId], references: [id])
 }
 
 model Ticket {
-  id         Int          @id @default(autoincrement())
-  eventId    Int
-  event      Event        @relation(fields: [eventId], references: [id])
-  type       String
-  price      Int
-  quantity   Int
-  createdAt  DateTime     @default(now())
+  id                 Int                 @id @default(autoincrement())
+  eventId            Int
+  event              Event               @relation(fields: [eventId], references: [id])
+  type               String
+  price              Int
+  quantity           Int
+  createdAt          DateTime            @default(now())
   transactionDetails TransactionDetail[]
 }
 
 model Promotion {
-  id          String   @id @default(uuid())
-  eventId     Int
-  event       Event    @relation(fields: [eventId], references: [id])
-  code        String   @unique
-  discount    Int
-  startDate   DateTime
-  endDate     DateTime
-  maxUses     Int?
-  uses        Int      @default(0)
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid())
+  eventId   Int
+  event     Event    @relation(fields: [eventId], references: [id])
+  code      String   @unique
+  discount  Int
+  startDate DateTime
+  endDate   DateTime
+  maxUses   Int?
+  uses      Int      @default(0)
+  createdAt DateTime @default(now())
 }
 
 model Coupon {
-  id          String   @id @default(uuid())
-  code        String   @unique
-  discount    Int
-  userId      Int
-  user        User     @relation(fields: [userId], references: [id])
-  expiresAt   DateTime
-  isUsed      Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid())
+  code      String   @unique
+  discount  Int
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  isUsed    Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
 
 model Transaction {
-  id              Int         @id @default(autoincrement())
-  eventId         Int
-  event           Event        @relation(fields: [eventId], references: [id])
-  userId          Int
-  user            User         @relation(fields: [userId], references: [id])
-  quantity        Int
-  totalPrice      Int
-  status          TransactionStatus @default(WAITING_FOR_PAYMENT)
-  paymentProof    String?
-  voucherCode     String?
-  pointsUsed      Int           @default(0)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  expiresAt       DateTime?
+  id           Int                 @id @default(autoincrement())
+  eventId      Int
+  event        Event               @relation(fields: [eventId], references: [id])
+  userId       Int
+  user         User                @relation(fields: [userId], references: [id])
+  quantity     Int
+  totalPrice   Int
+  status       TransactionStatus   @default(WAITING_FOR_PAYMENT)
+  paymentProof String?
+  voucherCode  String?
+  pointsUsed   Int                 @default(0)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  expiresAt    DateTime?
+  details      TransactionDetail[]
 
   @@index([userId, eventId]) // Composite index for faster queries
-    @@index([status, expiresAt]) // Untuk cron job
-  @@index([userId, status])   // Untuk dashboard user
-  details        TransactionDetail[]
+  @@index([status, expiresAt]) // Untuk cron job
+  @@index([userId, status]) // Untuk dashboard user
 }
 
-
 model Review {
-  id          Int         @id @default(autoincrement())
-  userId      Int
-  eventId     Int
-  event       Event        @relation(fields: [eventId], references: [id])
-  user        User         @relation(fields: [userId], references: [id])
-  rating      Int          // 1–5
-  comment     String?
-  createdAt   DateTime     @default(now())
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  eventId   Int
+  event     Event    @relation(fields: [eventId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  rating    Int // 1–5
+  comment   String?
+  createdAt DateTime @default(now())
 
   @@unique([userId, eventId]) // Prevent duplicate reviews for the same user-event pair
 }
 
 model TransactionDetail {
-  id             Int          @id @default(autoincrement())
-  transactionId  Int
-  transaction    Transaction  @relation(fields: [transactionId], references: [id])
-  ticketId       Int
-  ticket         Ticket       @relation(fields: [ticketId], references: [id])
-  quantity       Int
+  id            Int         @id @default(autoincrement())
+  transactionId Int
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  ticketId      Int
+  ticket        Ticket      @relation(fields: [ticketId], references: [id])
+  quantity      Int
 
   @@index([transactionId])
   @@index([ticketId])
