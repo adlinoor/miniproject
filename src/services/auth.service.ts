@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import prisma from "../lib/prisma";
 import { IRegisterParam, ILoginParam } from "../interfaces/user.interface";
 
+// Service untuk registrasi pengguna
 export const RegisterService = async (param: IRegisterParam) => {
   if (!Object.values(Role).includes(param.role)) {
     throw new Error(
@@ -26,12 +27,12 @@ export const RegisterService = async (param: IRegisterParam) => {
 
   if (param.referralCode) {
     referredByUser = await prisma.user.findUnique({
-      where: { referralCode: param.referralCode },
+      where: { referralCode: param.referralCode.toUpperCase() }, // Pastikan referral code case-insensitive
     });
     if (!referredByUser) throw new Error("Invalid referral code");
   }
 
-  // Mulai transaksi
+  // Mulai transaksi untuk membuat user baru dan reward ke referrer
   const user = await prisma.$transaction(async (tx) => {
     // Create new user
     const newUser = await tx.user.create({
@@ -49,12 +50,12 @@ export const RegisterService = async (param: IRegisterParam) => {
 
     // Jika referral valid, beri reward ke referrer
     if (referredByUser) {
-      // Tambahkan point
+      // Tambahkan point untuk referrer
       await tx.point.create({
         data: {
           userId: referredByUser.id,
           amount: 10000,
-          expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90), // 3 bulan
+          expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90), // Poin berlaku 3 bulan
         },
       });
 
@@ -66,8 +67,8 @@ export const RegisterService = async (param: IRegisterParam) => {
             .toString(36)
             .substring(2, 8)
             .toUpperCase()}`,
-          discount: 10000,
-          expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90), // 3 bulan
+          discount: 10000, // Nilai diskon kupon
+          expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90), // Kupon berlaku 3 bulan
         },
       });
     }
@@ -78,6 +79,7 @@ export const RegisterService = async (param: IRegisterParam) => {
   return user;
 };
 
+// Service untuk login pengguna
 export const LoginService = async (param: ILoginParam) => {
   const user = await prisma.user.findFirst({
     where: { email: param.email },

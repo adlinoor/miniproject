@@ -4,7 +4,7 @@ import { z } from "zod";
 import bcrypt from "bcrypt";
 import { uploadToCloudinary } from "../services/cloudinary.service";
 
-// ✅ Schema validasi untuk update profile
+// ✅ Schema validasi untuk update profil
 const updateSchema = z.object({
   first_name: z.string().optional(),
   last_name: z.string().optional(),
@@ -64,6 +64,8 @@ export const updateProfile = async (
       const profilePictureUrl = await uploadToCloudinary(req.file);
       validatedData.profilePicture = profilePictureUrl;
     }
+
+    // ✅ Jika pengguna ingin menghapus foto profil
     if (req.body.removePicture === "true") {
       validatedData.profilePicture = "";
     }
@@ -80,6 +82,7 @@ export const updateProfile = async (
   }
 };
 
+// ✅ Ambil ringkasan reward pengguna (poin dan kupon)
 export const getRewardSummary = async (
   req: Request,
   res: Response,
