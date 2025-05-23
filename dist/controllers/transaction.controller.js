@@ -37,7 +37,6 @@ const createEventTransaction = (req, res) => __awaiter(void 0, void 0, void 0, f
         const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
         if (!userId)
             return res.status(401).json({ message: "Unauthorized" });
-<<<<<<< HEAD
         // ✅ Parse semua dari FormData (string)
         const eventId = parseInt(req.body.eventId);
         const quantity = parseInt(req.body.quantity);
@@ -57,12 +56,6 @@ const createEventTransaction = (req, res) => __awaiter(void 0, void 0, void 0, f
         console.log("📎 req.file:", req.file);
         // ✅ Tidak perlu pakai Zod parse lagi kalau sudah validasi manual
         const transaction = yield (0, transaction_service_1.createTransaction)(userId, eventId, quantity, voucherCode, pointsUsed, ticketTypeId);
-=======
-        const validatedData = exports.transactionSchema.parse(Object.assign(Object.assign({}, req.body), { eventId: Number(req.body.eventId), quantity: Number(req.body.quantity), pointsUsed: req.body.pointsUsed ? Number(req.body.pointsUsed) : undefined, ticketTypeId: req.body.ticketTypeId
-                ? Number(req.body.ticketTypeId)
-                : undefined }));
-        const transaction = yield (0, transaction_service_1.createTransaction)(userId, validatedData.eventId, validatedData.quantity, validatedData.voucherCode, validatedData.pointsUsed, validatedData.ticketTypeId);
->>>>>>> c45909a3dcef10623f2f7f3fc808e13720d33323
         res.status(201).json(transaction);
     }
     catch (error) {
