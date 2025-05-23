@@ -19,7 +19,12 @@ export const authenticate = (
   res: Response,
   next: NextFunction
 ) => {
-  const token = req.cookies?.access_token;
+  const authHeader = req.headers.authorization;
+  const cookieToken = req.cookies?.access_token;
+
+  const token = authHeader?.startsWith("Bearer ")
+    ? authHeader.split(" ")[1]
+    : cookieToken;
 
   if (!token) {
     return res.status(401).json({ message: "Unauthorized: Token missing" });
