@@ -99,10 +99,3 @@ app.use(error_middleware_1.errorHandler);
 require("./utils/cron");
 // ✅ Untuk Vercel (serverless)
 exports.default = app;
-// ✅ Untuk development lokal (npm run dev)
-if (require.main === module) {
-    const PORT = process.env.PORT || 8080;
-    app.listen(PORT, () => {
-        console.log(`🚀 Server listening on http://localhost:${PORT}`);
-    });
-}
