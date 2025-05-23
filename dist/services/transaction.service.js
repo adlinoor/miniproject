@@ -75,14 +75,19 @@ const createTransaction = (userId, eventId, quantity, voucherCode, pointsUsed, t
             totalPrice = Math.max(0, totalPrice - pointsUsed);
         }
         // 4. Create transaction
+        const isFree = totalPrice === 0;
         const transaction = yield tx.transaction.create({
             data: {
                 userId,
                 eventId,
                 quantity,
                 totalPrice,
-                status: client_1.TransactionStatus.WAITING_FOR_PAYMENT,
-                expiresAt: new Date(Date.now() + PAYMENT_WINDOW_HOURS * 60 * 60 * 1000),
+                status: isFree
+                    ? client_1.TransactionStatus.DONE
+                    : client_1.TransactionStatus.WAITING_FOR_PAYMENT,
+                expiresAt: isFree
+                    ? null
+                    : new Date(Date.now() + PAYMENT_WINDOW_HOURS * 60 * 60 * 1000),
                 voucherCode,
                 pointsUsed: pointsUsed || 0,
                 details: ticketTypeId

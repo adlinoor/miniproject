@@ -49,16 +49,16 @@ exports.getVouchersByEvent = exports.createVoucher = exports.getEventAttendees =
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const zod_1 = require("zod");
 const voucherService = __importStar(require("../services/promotion.service"));
-// === SCHEMA VALIDATION ===
+// === Schema Validation ===
 exports.createEventSchema = zod_1.z.object({
     title: zod_1.z.string().min(1),
     description: zod_1.z.string().min(1),
     startDate: zod_1.z.string().refine((val) => !isNaN(Date.parse(val)), {
         message: "Invalid start date",
     }),
-    endDate: zod_1.z
-        .string()
-        .refine((val) => !isNaN(Date.parse(val)), { message: "Invalid end date" }),
+    endDate: zod_1.z.string().refine((val) => !isNaN(Date.parse(val)), {
+        message: "Invalid end date",
+    }),
     location: zod_1.z.string().min(1),
     category: zod_1.z.string().min(1),
     price: zod_1.z.number().min(0),
@@ -69,12 +69,12 @@ exports.createEventSchema = zod_1.z.object({
         type: zod_1.z.string(),
         price: zod_1.z.number().min(0),
         quota: zod_1.z.number().min(1),
-        quantity: zod_1.z.number().min(1).optional(), // fallback ke quota
+        quantity: zod_1.z.number().min(1).optional(),
     }))
         .optional(),
 });
 exports.updateEventSchema = exports.createEventSchema.partial();
-// === CREATE EVENT ===
+// === Create Event ===
 const createEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
@@ -101,16 +101,18 @@ const createEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                             type: ticket.type,
                             price: ticket.price,
                             quota: ticket.quota,
-                            quantity: (_a = ticket.quantity) !== null && _a !== void 0 ? _a : ticket.quota, // fallback
+                            quantity: (_a = ticket.quantity) !== null && _a !== void 0 ? _a : ticket.quota,
                         });
                     }),
                 });
             }
             return created;
         }));
-        res
-            .status(201)
-            .json({ status: "success", message: "Event created", data: event });
+        res.status(201).json({
+            status: "success",
+            message: "Event created",
+            data: event,
+        });
     }
     catch (error) {
         const status = error.name === "ZodError" ? 400 : 500;
@@ -118,43 +120,49 @@ const createEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.createEvent = createEvent;
-// === GET EVENTS (FILTER + PAGINASI) ===
+// === Get Events with Filters & Pagination ===
 const getEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { search, category, location, minPrice, maxPrice, startDate, endDate, sortBy, sortOrder = "asc", page = "1", limit = "10", } = req.query;
         const where = {};
-        if (search) {
+        if (typeof search === "string") {
             where.OR = [
                 { title: { contains: search, mode: "insensitive" } },
                 { description: { contains: search, mode: "insensitive" } },
             ];
         }
-        if (category)
+        if (typeof category === "string")
             where.category = category;
-        if (location)
+        if (typeof location === "string")
             where.location = location;
-        if (minPrice || maxPrice) {
+        if (typeof minPrice === "string" || typeof maxPrice === "string") {
             where.price = {};
-            if (minPrice)
+            if (typeof minPrice === "string")
                 where.price.gte = Number(minPrice);
-            if (maxPrice)
+            if (typeof maxPrice === "string")
                 where.price.lte = Number(maxPrice);
         }
-        if (startDate || endDate) {
+        if (typeof startDate === "string" || typeof endDate === "string") {
             where.startDate = {};
+<<<<<<< HEAD
             if (startDate && !isNaN(Date.parse(startDate))) {
                 where.startDate.gte = new Date(startDate);
             }
             if (endDate && !isNaN(Date.parse(endDate))) {
+=======
+            if (typeof startDate === "string")
+                where.startDate.gte = new Date(startDate);
+            if (typeof endDate === "string")
+>>>>>>> c45909a3dcef10623f2f7f3fc808e13720d33323
                 where.startDate.lte = new Date(endDate);
             }
         }
-        const orderBy = typeof sortBy === "string" &&
-            (sortOrder === "asc" || sortOrder === "desc")
-            ? { [sortBy]: sortOrder }
+        const validSortOrder = sortOrder === "desc" ? "desc" : "asc";
+        const orderBy = typeof sortBy === "string"
+            ? { [sortBy]: validSortOrder }
             : { startDate: "asc" };
-        const pageNumber = Math.max(1, parseInt(page));
-        const pageSize = Math.max(1, parseInt(limit));
+        const pageNumber = Math.max(1, parseInt(page, 10));
+        const pageSize = Math.max(1, parseInt(limit, 10));
         const skip = (pageNumber - 1) * pageSize;
         const [events, total] = yield Promise.all([
             prisma_1.default.event.findMany({
@@ -194,7 +202,7 @@ const getEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.getEvents = getEvents;
-// === GET EVENT BY ID ===
+// === Get Event by ID ===
 const getEventById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const id = Number(req.params.id);
@@ -221,16 +229,19 @@ const getEventById = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             return res
                 .status(404)
                 .json({ status: "error", message: "Event not found" });
-        res
-            .status(200)
-            .json({ status: "success", message: "Event detail", data: event });
+        const dataWithOrganizerId = Object.assign(Object.assign({}, event), { organizerId: event.organizer.id });
+        res.status(200).json({
+            status: "success",
+            message: "Event detail",
+            data: dataWithOrganizerId,
+        });
     }
     catch (error) {
         res.status(500).json({ status: "error", message: error.message });
     }
 });
 exports.getEventById = getEventById;
-// === UPDATE EVENT ===
+// === Update Event ===
 const updateEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
@@ -241,18 +252,19 @@ const updateEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             return res
                 .status(404)
                 .json({ status: "error", message: "Event not found" });
-        if (event.organizerId !== organizerId) {
+        if (event.organizerId !== organizerId)
             return res.status(403).json({ status: "error", message: "Forbidden" });
-        }
         const validated = exports.updateEventSchema.parse(req.body);
         const updateData = Object.assign(Object.assign(Object.assign({}, validated), (validated.startDate && { startDate: new Date(validated.startDate) })), (validated.endDate && { endDate: new Date(validated.endDate) }));
         const updated = yield prisma_1.default.event.update({
             where: { id },
             data: updateData,
         });
-        res
-            .status(200)
-            .json({ status: "success", message: "Event updated", data: updated });
+        res.status(200).json({
+            status: "success",
+            message: "Event updated",
+            data: updated,
+        });
     }
     catch (error) {
         const status = error.name === "ZodError" ? 400 : 500;
@@ -260,7 +272,7 @@ const updateEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.updateEvent = updateEvent;
-// === DELETE EVENT ===
+// === Delete Event ===
 const deleteEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
@@ -271,9 +283,8 @@ const deleteEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             return res
                 .status(404)
                 .json({ status: "error", message: "Event not found" });
-        if (event.organizerId !== userId) {
+        if (event.organizerId !== userId)
             return res.status(403).json({ status: "error", message: "Forbidden" });
-        }
         yield prisma_1.default.event.delete({ where: { id } });
         res.status(200).json({ status: "success", message: "Event deleted" });
     }
@@ -282,7 +293,7 @@ const deleteEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.deleteEvent = deleteEvent;
-// === GET EVENTS BY ORGANIZER ===
+// === Get Events by Organizer ===
 const getEventsByOrganizer = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
@@ -298,16 +309,15 @@ const getEventsByOrganizer = (req, res) => __awaiter(void 0, void 0, void 0, fun
     }
 });
 exports.getEventsByOrganizer = getEventsByOrganizer;
-// === GET ATTENDEES BY EVENT ===
+// === Get Attendees by Event ===
 const getEventAttendees = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
         const id = Number(req.params.id);
         const organizerId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
         const event = yield prisma_1.default.event.findUnique({ where: { id } });
-        if (!event || event.organizerId !== organizerId) {
+        if (!event || event.organizerId !== organizerId)
             return res.status(403).json({ status: "error", message: "Unauthorized" });
-        }
         const attendees = yield prisma_1.default.transaction.findMany({
             where: {
                 eventId: id,
@@ -339,7 +349,7 @@ const getEventAttendees = (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 exports.getEventAttendees = getEventAttendees;
-// === CREATE VOUCHER ===
+// === Vouchers ===
 const createVoucher = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { code, discount, startDate, endDate } = req.body;
@@ -358,7 +368,6 @@ const createVoucher = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.createVoucher = createVoucher;
-// === GET VOUCHERS BY EVENT ===
 const getVouchersByEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const vouchers = yield voucherService.getVouchersByEvent(req.params.eventId);

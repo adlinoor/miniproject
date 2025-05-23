@@ -48,20 +48,12 @@ for (const key of requiredEnvVars) {
     }
 }
 const app = (0, express_1.default)();
-const whitelist = ["http://localhost:3000"];
 // ======================
 //      Middleware
 // ======================
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)({
-    origin: function (origin, callback) {
-        if (!origin || whitelist.includes(origin)) {
-            callback(null, origin);
-        }
-        else {
-            callback(new Error("Not allowed by CORS"));
-        }
-    },
+    origin: true, // izinkan semua origin
     credentials: true,
 }));
 app.use((0, express_rate_limit_1.rateLimit)({
@@ -107,10 +99,3 @@ app.use(error_middleware_1.errorHandler);
 require("./utils/cron");
 // ✅ Untuk Vercel (serverless)
 exports.default = app;
-// ✅ Untuk development lokal (npm run dev)
-if (require.main === module) {
-    const PORT = process.env.PORT || 8080;
-    app.listen(PORT, () => {
-        console.log(`🚀 Server listening on http://localhost:${PORT}`);
-    });
-}

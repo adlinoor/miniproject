@@ -17,6 +17,7 @@ const transaction_service_1 = require("../services/transaction.service");
 const client_1 = require("@prisma/client");
 const zod_1 = require("zod");
 const prisma_1 = __importDefault(require("../lib/prisma"));
+// Validasi schema transaksi
 exports.transactionSchema = zod_1.z.object({
     eventId: zod_1.z.number().min(1),
     quantity: zod_1.z.number().min(1),
@@ -24,16 +25,19 @@ exports.transactionSchema = zod_1.z.object({
     pointsUsed: zod_1.z.number().min(0).optional(),
     ticketTypeId: zod_1.z.number().min(1).optional(),
 });
+// Validasi update status
 exports.transactionUpdateSchema = zod_1.z.object({
     status: zod_1.z.nativeEnum(client_1.TransactionStatus),
     paymentProof: zod_1.z.string().optional(),
 });
+// Create Transaction
 const createEventTransaction = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
         const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
         if (!userId)
             return res.status(401).json({ message: "Unauthorized" });
+<<<<<<< HEAD
         // ✅ Parse semua dari FormData (string)
         const eventId = parseInt(req.body.eventId);
         const quantity = parseInt(req.body.quantity);
@@ -53,6 +57,12 @@ const createEventTransaction = (req, res) => __awaiter(void 0, void 0, void 0, f
         console.log("📎 req.file:", req.file);
         // ✅ Tidak perlu pakai Zod parse lagi kalau sudah validasi manual
         const transaction = yield (0, transaction_service_1.createTransaction)(userId, eventId, quantity, voucherCode, pointsUsed, ticketTypeId);
+=======
+        const validatedData = exports.transactionSchema.parse(Object.assign(Object.assign({}, req.body), { eventId: Number(req.body.eventId), quantity: Number(req.body.quantity), pointsUsed: req.body.pointsUsed ? Number(req.body.pointsUsed) : undefined, ticketTypeId: req.body.ticketTypeId
+                ? Number(req.body.ticketTypeId)
+                : undefined }));
+        const transaction = yield (0, transaction_service_1.createTransaction)(userId, validatedData.eventId, validatedData.quantity, validatedData.voucherCode, validatedData.pointsUsed, validatedData.ticketTypeId);
+>>>>>>> c45909a3dcef10623f2f7f3fc808e13720d33323
         res.status(201).json(transaction);
     }
     catch (error) {
@@ -61,6 +71,7 @@ const createEventTransaction = (req, res) => __awaiter(void 0, void 0, void 0, f
     }
 });
 exports.createEventTransaction = createEventTransaction;
+// Get Transaction Detail
 const getTransactionDetails = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
@@ -72,6 +83,7 @@ const getTransactionDetails = (req, res) => __awaiter(void 0, void 0, void 0, fu
     }
 });
 exports.getTransactionDetails = getTransactionDetails;
+// Update Transaction (Status or PaymentProof)
 const updateTransaction = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
@@ -100,6 +112,7 @@ const updateTransaction = (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 exports.updateTransaction = updateTransaction;
+// Get All Transactions by User
 const getUserTransactionHistory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
@@ -114,7 +127,7 @@ const getUserTransactionHistory = (req, res) => __awaiter(void 0, void 0, void 0
     }
 });
 exports.getUserTransactionHistory = getUserTransactionHistory;
-// Reusable error handler
+// Error Handler
 function handleTransactionError(res, error) {
     console.error("Transaction error:", error);
     const statusCode = error.message.includes("not found")
@@ -126,6 +139,7 @@ function handleTransactionError(res, error) {
                 : 400;
     res.status(statusCode).json(Object.assign({ error: error.message || "Transaction operation failed" }, (error instanceof zod_1.z.ZodError && { details: error.errors })));
 }
+// Cek apakah user sudah join event
 const checkUserJoined = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
@@ -136,6 +150,7 @@ const checkUserJoined = (req, res) => __awaiter(void 0, void 0, void 0, function
     res.json({ joined: !!existing });
 });
 exports.checkUserJoined = checkUserJoined;
+// Get My Joined Events
 const getMyEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
@@ -152,6 +167,7 @@ const getMyEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.getMyEvents = getMyEvents;
+// Organizer melihat semua transaksi event miliknya
 const getOrganizerTransactions = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
@@ -182,6 +198,7 @@ const getOrganizerTransactions = (req, res) => __awaiter(void 0, void 0, void 0,
     }
 });
 exports.getOrganizerTransactions = getOrganizerTransactions;
+// Upload Payment Proof (khusus event berbayar)
 const uploadPaymentProof = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const transactionId = parseInt(req.params.id, 10);
@@ -205,7 +222,7 @@ const uploadPaymentProof = (req, res) => __awaiter(void 0, void 0, void 0, funct
         const updatedTransaction = yield prisma_1.default.transaction.update({
             where: { id: transactionId },
             data: {
-                paymentProof: file.path,
+                paymentProof: req.body.imageUrl,
                 status: "WAITING_FOR_ADMIN_CONFIRMATION",
             },
         });

@@ -84,14 +84,20 @@ export const createTransaction = async (
     }
 
     // 4. Create transaction
+    const isFree = totalPrice === 0;
+
     const transaction = await tx.transaction.create({
       data: {
         userId,
         eventId,
         quantity,
         totalPrice,
-        status: TransactionStatus.WAITING_FOR_PAYMENT,
-        expiresAt: new Date(Date.now() + PAYMENT_WINDOW_HOURS * 60 * 60 * 1000),
+        status: isFree
+          ? TransactionStatus.DONE
+          : TransactionStatus.WAITING_FOR_PAYMENT,
+        expiresAt: isFree
+          ? null
+          : new Date(Date.now() + PAYMENT_WINDOW_HOURS * 60 * 60 * 1000),
         voucherCode,
         pointsUsed: pointsUsed || 0,
         details: ticketTypeId

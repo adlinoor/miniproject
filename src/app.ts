@@ -13,7 +13,6 @@ import eventRouter from "./routers/event.routers";
 import reviewRouter from "./routers/review.routers";
 import transactionRouter from "./routers/transaction.routers";
 import userRouter from "./routers/user.routers";
-import { upload } from "./services/cloudinary.service";
 import statisticRouter from "./routers/statistic.routers";
 import promotionRouter from "./routers/promotion.routers";
 
@@ -39,7 +38,6 @@ for (const key of requiredEnvVars) {
 }
 
 const app = express();
-const whitelist = ["http://localhost:3000"];
 
 // ======================
 //      Middleware
@@ -47,16 +45,11 @@ const whitelist = ["http://localhost:3000"];
 app.use(helmet());
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || whitelist.includes(origin)) {
-        callback(null, origin);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: true, // izinkan semua origin
     credentials: true,
   })
 );
+
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -106,11 +99,3 @@ import "./utils/cron";
 
 // ✅ Untuk Vercel (serverless)
 export default app;
-
-// ✅ Untuk development lokal (npm run dev)
-if (require.main === module) {
-  const PORT = process.env.PORT || 8080;
-  app.listen(PORT, () => {
-    console.log(`🚀 Server listening on http://localhost:${PORT}`);
-  });
-}

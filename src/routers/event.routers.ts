@@ -23,7 +23,7 @@ import {
 } from "../middleware/validator.middleware";
 
 import { authenticate, authorizeRoles } from "../middleware/auth.middleware";
-import { upload } from "../services/cloudinary.service";
+import upload from "../middleware/upload";
 import { uploadImageAndAttachUrl } from "../middleware/uploadImageAndAttachUrl";
 
 const router = Router();

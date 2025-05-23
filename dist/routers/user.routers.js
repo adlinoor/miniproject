@@ -39,7 +39,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const userController = __importStar(require("../controllers/user.controller"));
 const auth_middleware_1 = require("../middleware/auth.middleware");
-const cloudinary_service_1 = require("../services/cloudinary.service");
+const upload_1 = __importDefault(require("../middleware/upload"));
 const router = express_1.default.Router();
 /**
  * GET /api/users/me
@@ -49,7 +49,7 @@ router.get("/me", auth_middleware_1.authenticate, userController.getProfile);
  * PUT /api/users/profile
  * Bisa JSON biasa, atau multipart dengan file opsional
  */
-router.put("/profile", auth_middleware_1.authenticate, cloudinary_service_1.upload.single("profilePicture"), userController.updateProfile);
+router.put("/profile", auth_middleware_1.authenticate, upload_1.default.single("profilePicture"), userController.updateProfile);
 /**
  * GET /api/users/rewards
  */
