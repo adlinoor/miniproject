@@ -3,11 +3,13 @@ import request from "supertest";
 import app from "../src/app";
 
 describe("Auth Routes", () => {
+  const uniqueEmail = `testuser_${Date.now()}@example.com`; // unik setiap run
+
   it("should register a new user", async () => {
     const res = await request(app).post("/api/auth/register").send({
       first_name: "John",
       last_name: "Doe",
-      email: "johndoe@example.com",
+      email: uniqueEmail,
       password: "password123",
       role: "CUSTOMER",
     });
@@ -16,12 +18,12 @@ describe("Auth Routes", () => {
 
     expect(res.statusCode).toBe(201);
     expect(res.body).toHaveProperty("user");
-    expect(res.body.user).toHaveProperty("email", "johndoe@example.com");
+    expect(res.body.user).toHaveProperty("email", uniqueEmail);
   });
 
   it("should login an existing user", async () => {
     const res = await request(app).post("/api/auth/login").send({
-      email: "johndoe@example.com",
+      email: uniqueEmail,
       password: "password123",
     });
 
@@ -29,6 +31,6 @@ describe("Auth Routes", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty("user");
-    expect(res.body.user).toHaveProperty("email", "johndoe@example.com");
+    expect(res.body.user).toHaveProperty("email", uniqueEmail);
   });
 });
