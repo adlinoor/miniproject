@@ -1,12 +1,17 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_middleware_1 = require("../middleware/auth.middleware");
+const upload_1 = __importDefault(require("../middleware/upload"));
 const transaction_controller_1 = require("../controllers/transaction.controller");
 const client_1 = require("@prisma/client");
 const router = (0, express_1.Router)();
 // CUSTOMER: Buat transaksi event
-router.post("/", auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeRoles)(client_1.Role.CUSTOMER), transaction_controller_1.createEventTransaction);
+router.post("/", auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeRoles)(client_1.Role.CUSTOMER), upload_1.default.single("payment_proof"), // Upload bukti pembayaran
+transaction_controller_1.createEventTransaction);
 // CUSTOMER: Cek detail transaksi (atau milik sendiri)
 router.get("/:id", auth_middleware_1.authenticate, transaction_controller_1.getTransactionDetails);
 // CUSTOMER: Cek apakah sudah join event tertentu

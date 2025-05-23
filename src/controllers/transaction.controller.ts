@@ -24,33 +24,42 @@ export const transactionUpdateSchema = z.object({
 export const createEventTransaction = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    // ✅ Parse semua dari FormData (string)
+    const eventId = parseInt(req.body.eventId);
+    const quantity = parseInt(req.body.quantity);
+    const pointsUsed = req.body.pointsUsed
+      ? parseInt(req.body.pointsUsed)
+      : undefined;
+    const voucherCode = req.body.voucherCode || undefined;
+    const ticketTypeId = req.body.ticketTypeId
+      ? parseInt(req.body.ticketTypeId)
+      : undefined;
+
+    // ✅ Validasi manual
+    if (!eventId || isNaN(quantity) || quantity < 1) {
+      return res.status(422).json({ message: "eventId or quantity invalid" });
     }
 
-    const validatedData = transactionSchema.parse({
-      ...req.body,
-      eventId: Number(req.body.eventId),
-      quantity: Number(req.body.quantity),
-      pointsUsed: req.body.pointsUsed ? Number(req.body.pointsUsed) : undefined,
-      ticketTypeId: req.body.ticketTypeId
-        ? Number(req.body.ticketTypeId)
-        : undefined,
-    });
+    // ✅ Log debug lengkap
+    console.log("📦 req.body:", req.body);
+    console.log("📎 req.file:", req.file);
 
-    // Fixed: Pass parameters directly instead of using spread with Object.values()
+    // ✅ Tidak perlu pakai Zod parse lagi kalau sudah validasi manual
     const transaction = await createTransaction(
       userId,
-      validatedData.eventId,
-      validatedData.quantity,
-      validatedData.voucherCode,
-      validatedData.pointsUsed,
-      validatedData.ticketTypeId
+      eventId,
+      quantity,
+      voucherCode,
+      pointsUsed,
+      ticketTypeId
     );
 
     res.status(201).json(transaction);
   } catch (error: any) {
-    handleTransactionError(res, error);
+    console.error("❌ Unexpected error:", error.message || error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 

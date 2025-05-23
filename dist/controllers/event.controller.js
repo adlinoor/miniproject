@@ -53,9 +53,7 @@ const voucherService = __importStar(require("../services/promotion.service"));
 exports.createEventSchema = zod_1.z.object({
     title: zod_1.z.string().min(1),
     description: zod_1.z.string().min(1),
-    startDate: zod_1.z
-        .string()
-        .refine((val) => !isNaN(Date.parse(val)), {
+    startDate: zod_1.z.string().refine((val) => !isNaN(Date.parse(val)), {
         message: "Invalid start date",
     }),
     endDate: zod_1.z
@@ -144,10 +142,12 @@ const getEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         }
         if (startDate || endDate) {
             where.startDate = {};
-            if (startDate)
+            if (startDate && !isNaN(Date.parse(startDate))) {
                 where.startDate.gte = new Date(startDate);
-            if (endDate)
+            }
+            if (endDate && !isNaN(Date.parse(endDate))) {
                 where.startDate.lte = new Date(endDate);
+            }
         }
         const orderBy = typeof sortBy === "string" &&
             (sortOrder === "asc" || sortOrder === "desc")

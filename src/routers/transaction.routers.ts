@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticate, authorizeRoles } from "../middleware/auth.middleware";
+import upload from "../middleware/upload";
 import {
   checkUserJoined,
   createEventTransaction,
@@ -17,6 +18,7 @@ router.post(
   "/",
   authenticate,
   authorizeRoles(Role.CUSTOMER),
+  upload.single("payment_proof"), // Upload bukti pembayaran
   createEventTransaction
 );
 

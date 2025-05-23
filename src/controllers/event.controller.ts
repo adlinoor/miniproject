@@ -7,11 +7,9 @@ import * as voucherService from "../services/promotion.service";
 export const createEventSchema = z.object({
   title: z.string().min(1),
   description: z.string().min(1),
-  startDate: z
-    .string()
-    .refine((val) => !isNaN(Date.parse(val)), {
-      message: "Invalid start date",
-    }),
+  startDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
+    message: "Invalid start date",
+  }),
   endDate: z
     .string()
     .refine((val) => !isNaN(Date.parse(val)), { message: "Invalid end date" }),
@@ -115,8 +113,12 @@ export const getEvents = async (req: Request, res: Response) => {
     }
     if (startDate || endDate) {
       where.startDate = {};
-      if (startDate) where.startDate.gte = new Date(startDate as string);
-      if (endDate) where.startDate.lte = new Date(endDate as string);
+      if (startDate && !isNaN(Date.parse(startDate as string))) {
+        where.startDate.gte = new Date(startDate as string);
+      }
+      if (endDate && !isNaN(Date.parse(endDate as string))) {
+        where.startDate.lte = new Date(endDate as string);
+      }
     }
 
     const orderBy: any =
