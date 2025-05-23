@@ -5,10 +5,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_middleware_1 = require("../middleware/auth.middleware");
-const client_1 = require("@prisma/client");
 const upload_1 = __importDefault(require("../middleware/upload"));
-const uploadImageAndAttachUrl_1 = require("../middleware/uploadImageAndAttachUrl");
 const transaction_controller_1 = require("../controllers/transaction.controller");
+const client_1 = require("@prisma/client");
+const uploadImageAndAttachUrl_1 = require("../middleware/uploadImageAndAttachUrl");
 const router = (0, express_1.Router)();
 //
 // =======================
@@ -16,7 +16,8 @@ const router = (0, express_1.Router)();
 // =======================
 //
 // Buat transaksi baru (checkout event)
-router.post("/", auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeRoles)(client_1.Role.CUSTOMER), transaction_controller_1.createEventTransaction);
+router.post("/", auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeRoles)(client_1.Role.CUSTOMER), upload_1.default.single("payment_proof"), // Upload bukti pembayaran
+transaction_controller_1.createEventTransaction);
 // Lihat detail transaksi (milik sendiri)
 router.get("/:id", auth_middleware_1.authenticate, transaction_controller_1.getTransactionDetails);
 // Cek apakah user sudah join event tertentu

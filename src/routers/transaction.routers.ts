@@ -1,8 +1,6 @@
 import { Router } from "express";
 import { authenticate, authorizeRoles } from "../middleware/auth.middleware";
-import { Role } from "@prisma/client";
 import upload from "../middleware/upload";
-import { uploadImageAndAttachUrl } from "../middleware/uploadImageAndAttachUrl";
 import {
   checkUserJoined,
   createEventTransaction,
@@ -12,6 +10,8 @@ import {
   updateTransaction,
   uploadPaymentProof,
 } from "../controllers/transaction.controller";
+import { Role } from "@prisma/client";
+import { uploadImageAndAttachUrl } from "../middleware/uploadImageAndAttachUrl";
 
 const router = Router();
 
@@ -26,6 +26,7 @@ router.post(
   "/",
   authenticate,
   authorizeRoles(Role.CUSTOMER),
+  upload.single("payment_proof"), // Upload bukti pembayaran
   createEventTransaction
 );
 

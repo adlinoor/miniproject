@@ -11,9 +11,9 @@ export const createEventSchema = z.object({
   startDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Invalid start date",
   }),
-  endDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
-    message: "Invalid end date",
-  }),
+  endDate: z
+    .string()
+    .refine((val) => !isNaN(Date.parse(val)), { message: "Invalid end date" }),
   location: z.string().min(1),
   category: z.string().min(1),
   price: z.number().min(0),
@@ -120,9 +120,12 @@ export const getEvents = async (req: Request, res: Response) => {
 
     if (typeof startDate === "string" || typeof endDate === "string") {
       where.startDate = {};
-      if (typeof startDate === "string")
-        where.startDate.gte = new Date(startDate);
-      if (typeof endDate === "string") where.startDate.lte = new Date(endDate);
+      if (startDate && !isNaN(Date.parse(startDate as string))) {
+        where.startDate.gte = new Date(startDate as string);
+      }
+      if (endDate && !isNaN(Date.parse(endDate as string))) {
+        where.startDate.lte = new Date(endDate as string);
+      }
     }
 
     const validSortOrder: "asc" | "desc" =

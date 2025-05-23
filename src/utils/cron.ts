@@ -96,7 +96,11 @@ cron.schedule("0 * * * *", async () => {
 });
 
 /**
+<<<<<<< HEAD
  * 🧪 Optional: run expiration checker if it has extra logic
+=======
+ * 🧪 Optional: Use if checkTransactionExpirations has different logic
+>>>>>>> e654e4524e15f8e93a2dc691010488b060051a89
  * Runs every 30 minutes
  */
 cron.schedule("*/30 * * * *", async () => {
@@ -110,7 +114,11 @@ cron.schedule("*/30 * * * *", async () => {
 });
 
 /**
+<<<<<<< HEAD
  * 🧰 Reusable custom task scheduler
+=======
+ * 🧰 Reusable scheduler (for testing or future extensions)
+>>>>>>> e654e4524e15f8e93a2dc691010488b060051a89
  */
 export function scheduleTask(
   taskName: string,

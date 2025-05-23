@@ -56,9 +56,9 @@ exports.createEventSchema = zod_1.z.object({
     startDate: zod_1.z.string().refine((val) => !isNaN(Date.parse(val)), {
         message: "Invalid start date",
     }),
-    endDate: zod_1.z.string().refine((val) => !isNaN(Date.parse(val)), {
-        message: "Invalid end date",
-    }),
+    endDate: zod_1.z
+        .string()
+        .refine((val) => !isNaN(Date.parse(val)), { message: "Invalid end date" }),
     location: zod_1.z.string().min(1),
     category: zod_1.z.string().min(1),
     price: zod_1.z.number().min(0),
@@ -144,10 +144,12 @@ const getEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         }
         if (typeof startDate === "string" || typeof endDate === "string") {
             where.startDate = {};
-            if (typeof startDate === "string")
+            if (startDate && !isNaN(Date.parse(startDate))) {
                 where.startDate.gte = new Date(startDate);
-            if (typeof endDate === "string")
+            }
+            if (endDate && !isNaN(Date.parse(endDate))) {
                 where.startDate.lte = new Date(endDate);
+            }
         }
         const validSortOrder = sortOrder === "desc" ? "desc" : "asc";
         const orderBy = typeof sortBy === "string"
