@@ -194,7 +194,7 @@ const getEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.getEvents = getEvents;
-// === Get Event by ID (with organizerId added) ===
+// === Get Event by ID ===
 const getEventById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const id = Number(req.params.id);
@@ -221,11 +221,8 @@ const getEventById = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             return res
                 .status(404)
                 .json({ status: "error", message: "Event not found" });
-        // Tambahkan organizerId secara eksplisit
         const dataWithOrganizerId = Object.assign(Object.assign({}, event), { organizerId: event.organizer.id });
-        res
-            .status(200)
-            .json({
+        res.status(200).json({
             status: "success",
             message: "Event detail",
             data: dataWithOrganizerId,
@@ -255,9 +252,11 @@ const updateEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             where: { id },
             data: updateData,
         });
-        res
-            .status(200)
-            .json({ status: "success", message: "Event updated", data: updated });
+        res.status(200).json({
+            status: "success",
+            message: "Event updated",
+            data: updated,
+        });
     }
     catch (error) {
         const status = error.name === "ZodError" ? 400 : 500;

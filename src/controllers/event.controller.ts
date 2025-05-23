@@ -175,7 +175,7 @@ export const getEvents = async (req: Request, res: Response) => {
   }
 };
 
-// === Get Event by ID (with organizerId added) ===
+// === Get Event by ID ===
 export const getEventById = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
@@ -204,16 +204,13 @@ export const getEventById = async (req: Request, res: Response) => {
         .status(404)
         .json({ status: "error", message: "Event not found" });
 
-    // Tambahkan organizerId secara eksplisit
     const dataWithOrganizerId = { ...event, organizerId: event.organizer.id };
 
-    res
-      .status(200)
-      .json({
-        status: "success",
-        message: "Event detail",
-        data: dataWithOrganizerId,
-      });
+    res.status(200).json({
+      status: "success",
+      message: "Event detail",
+      data: dataWithOrganizerId,
+    });
   } catch (error: any) {
     res.status(500).json({ status: "error", message: error.message });
   }
@@ -244,9 +241,12 @@ export const updateEvent = async (req: Request, res: Response) => {
       where: { id },
       data: updateData,
     });
-    res
-      .status(200)
-      .json({ status: "success", message: "Event updated", data: updated });
+
+    res.status(200).json({
+      status: "success",
+      message: "Event updated",
+      data: updated,
+    });
   } catch (error: any) {
     const status = error.name === "ZodError" ? 400 : 500;
     res.status(status).json({ status: "error", message: error.message });
@@ -268,6 +268,7 @@ export const deleteEvent = async (req: Request, res: Response) => {
       return res.status(403).json({ status: "error", message: "Forbidden" });
 
     await prisma.event.delete({ where: { id } });
+
     res.status(200).json({ status: "success", message: "Event deleted" });
   } catch (error: any) {
     res.status(500).json({ status: "error", message: error.message });
