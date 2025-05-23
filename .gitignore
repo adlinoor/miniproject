@@ -7,5 +7,3 @@ node_modules/
 # System files
 .DS_Store
 
-# Ignore compiled/transpiled output
-dist/
