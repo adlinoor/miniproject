@@ -113,6 +113,7 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             maxAge: 24 * 60 * 60 * 1000, // 1 hari
         });
         res.json({
+            token: result.token,
             user: result.user,
             message: "Login successful",
         });
