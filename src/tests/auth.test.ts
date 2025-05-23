@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
-import app from "../src/app";
+import app from "../app";
 
 describe("Auth Routes", () => {
   const uniqueEmail = `testuser_${Date.now()}@example.com`; // unik setiap run
