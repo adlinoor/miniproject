@@ -16,7 +16,11 @@ if (!secret) {
 // ===============================
 const authenticate = (req, res, next) => {
     var _a;
-    const token = (_a = req.cookies) === null || _a === void 0 ? void 0 : _a.access_token;
+    const authHeader = req.headers.authorization;
+    const cookieToken = (_a = req.cookies) === null || _a === void 0 ? void 0 : _a.access_token;
+    const token = (authHeader === null || authHeader === void 0 ? void 0 : authHeader.startsWith("Bearer "))
+        ? authHeader.split(" ")[1]
+        : cookieToken;
     if (!token) {
         return res.status(401).json({ message: "Unauthorized: Token missing" });
     }
