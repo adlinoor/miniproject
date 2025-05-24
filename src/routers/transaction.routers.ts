@@ -51,7 +51,12 @@ router.get(
 );
 
 // Lihat detail transaksi (milik sendiri)
-router.get("/:id", authenticate, getTransactionDetails);
+router.get(
+  "/:id",
+  authenticate,
+  authorizeRoles(Role.CUSTOMER, Role.ORGANIZER),
+  getTransactionDetails
+);
 
 // Upload bukti pembayaran ke Cloudinary
 router.patch(

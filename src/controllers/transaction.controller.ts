@@ -7,6 +7,7 @@ import {
 import { TransactionStatus } from "@prisma/client";
 import { z } from "zod";
 import prisma from "../lib/prisma";
+import { Role } from "@prisma/client";
 
 // Validasi schema transaksi
 export const transactionSchema = z.object({
@@ -70,7 +71,20 @@ export const createEventTransaction = async (req: Request, res: Response) => {
 export const getTransactionDetails = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const transaction = await getTransaction(parseInt(id, 10));
+    const transactionId = parseInt(id, 10);
+
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
+
+    const transaction = await getTransaction(transactionId);
+
+    // ❗️Validasi kepemilikan (kecuali admin / organizer)
+    if (userRole === Role.CUSTOMER && transaction.userId !== userId) {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: Not your transaction" });
+    }
+
     res.json(transaction);
   } catch (error: any) {
     handleTransactionError(res, error);

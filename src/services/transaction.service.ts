@@ -166,12 +166,13 @@ export const getTransaction = async (id: number) => {
     where: { id },
     include: {
       event: true,
-      user: { select: { email: true, first_name: true, last_name: true } },
-      details: { include: { ticket: true } },
     },
   });
 
-  if (!transaction) throw new Error("Transaction not found");
+  if (!transaction) {
+    throw new Error("Transaction not found");
+  }
+
   return transaction;
 };
 
