@@ -26,12 +26,16 @@ export const authenticate = (
     (authHeader?.startsWith("Bearer ") && authHeader.split(" ")[1]) ||
     cookieToken;
 
+  console.log("📥 Token from header or cookie:", token);
+
   if (!token) {
+    console.warn("❌ No token found in request");
     return res.status(401).json({ message: "Unauthorized: Token missing" });
   }
 
   try {
     const decoded = jwt.verify(token, secret) as UserPayload;
+    console.log("✅ Token verified. Payload:", decoded); // ✅ log full payload
     req.user = decoded;
     next();
   } catch (err) {
@@ -47,7 +51,11 @@ export const authorizeRoles = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = req.user as UserPayload;
 
+    console.log("🔍 Role from token:", user?.role);
+    console.log("🔐 Allowed roles:", roles);
+
     if (!user || !roles.includes(user.role)) {
+      console.warn("⛔ Access denied: user.role not in allowed roles");
       return res.status(403).json({
         message: "Forbidden: You do not have permission to access this route",
       });

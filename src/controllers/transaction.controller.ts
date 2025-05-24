@@ -116,12 +116,39 @@ export const getUserTransactionHistory = async (
 ) => {
   try {
     const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    const transactions = await getUserTransactions(userId);
-    res.json(transactions);
-  } catch (error: any) {
-    handleTransactionError(res, error);
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // ✅ Tambahkan log di sini
+    console.log("🔍 userId:", userId);
+
+    const transactions = await prisma.transaction.findMany({
+      where: { userId },
+      include: {
+        event: {
+          select: {
+            title: true,
+            startDate: true,
+            location: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    // ✅ Tambahkan log hasil
+    console.log("📦 transactions found:", transactions.length);
+
+    return res.status(200).json({ data: transactions });
+  } catch (error) {
+    console.error("❌ getUserTransactionHistory error:", error);
+    return res
+      .status(500)
+      .json({ message: "Failed to fetch user transactions" });
   }
 };
 

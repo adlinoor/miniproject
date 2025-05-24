@@ -9,6 +9,7 @@ import {
   getTransactionDetails,
   updateTransaction,
   uploadPaymentProof,
+  getUserTransactionHistory,
 } from "../controllers/transaction.controller";
 import { Role } from "@prisma/client";
 import { uploadImageAndAttachUrl } from "../middleware/uploadImageAndAttachUrl";
@@ -22,16 +23,21 @@ const router = Router();
 //
 
 // Buat transaksi baru (checkout event)
+//
 router.post(
   "/",
   authenticate,
   authorizeRoles(Role.CUSTOMER),
-  upload.single("payment_proof"), // Upload bukti pembayaran
+  upload.single("paymentProof"), // Upload bukti pembayaran
   createEventTransaction
 );
 
-// Lihat detail transaksi (milik sendiri)
-router.get("/:id", authenticate, getTransactionDetails);
+router.get(
+  "/me",
+  authenticate,
+  authorizeRoles(Role.CUSTOMER),
+  getUserTransactionHistory
+);
 
 // Cek apakah user sudah join event tertentu
 router.get("/check", authenticate, checkUserJoined);
@@ -44,6 +50,9 @@ router.get(
   getMyEvents
 );
 
+// Lihat detail transaksi (milik sendiri)
+router.get("/:id", authenticate, getTransactionDetails);
+
 // Upload bukti pembayaran ke Cloudinary
 router.patch(
   "/:id/payment-proof",
@@ -54,7 +63,6 @@ router.patch(
   uploadPaymentProof
 );
 
-//
 // =======================
 //  ORGANIZER ROUTES
 // =======================
