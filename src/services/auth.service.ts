@@ -1,10 +1,12 @@
-import { PrismaClient, Role } from "@prisma/client";
+import { Role } from "@prisma/client";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import prisma from "../lib/prisma";
 import { IRegisterParam, ILoginParam } from "../interfaces/user.interface";
+import { addPoints } from "./point.service";
 
 // Service untuk registrasi pengguna
+
 export const RegisterService = async (param: IRegisterParam) => {
   if (!Object.values(Role).includes(param.role)) {
     throw new Error(
@@ -22,19 +24,18 @@ export const RegisterService = async (param: IRegisterParam) => {
     .toString(36)
     .substring(2, 10)
     .toUpperCase()}`;
-
   let referredByUser = null;
 
   if (param.referralCode) {
     referredByUser = await prisma.user.findUnique({
-      where: { referralCode: param.referralCode.toUpperCase() }, // Pastikan referral code case-insensitive
+      where: { referralCode: param.referralCode.toUpperCase() },
     });
     if (!referredByUser) throw new Error("Invalid referral code");
   }
 
-  // Mulai transaksi untuk membuat user baru dan reward ke referrer
+  // ⬇️ TRANSACTION FINAL
   const user = await prisma.$transaction(async (tx) => {
-    // Create new user
+    // 1. Buat user baru
     const newUser = await tx.user.create({
       data: {
         email: param.email,
@@ -45,21 +46,19 @@ export const RegisterService = async (param: IRegisterParam) => {
         isVerified: false,
         referralCode,
         referredBy: referredByUser?.referralCode || null,
+        userPoints: 0, // default
       },
     });
 
-    // Jika referral valid, beri reward ke referrer
+    // 2. Jika pakai referral, reward ke referrer & new user (via addPoints)
     if (referredByUser) {
-      // Tambahkan point untuk referrer
-      await tx.point.create({
-        data: {
-          userId: referredByUser.id,
-          amount: 10000,
-          expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90), // Poin berlaku 3 bulan
-        },
-      });
+      // a. Referrer (yang kasih kode) dapat 10.000 point
+      await addPoints(tx, referredByUser.id, 10000);
 
-      // Buatkan kupon diskon untuk user baru
+      // b. User baru juga dapat 10.000 point
+      await addPoints(tx, newUser.id, 10000);
+
+      // c. Buat coupon ke user baru (opsional, bisa dihapus kalau tidak pakai kupon)
       await tx.coupon.create({
         data: {
           userId: newUser.id,
@@ -67,12 +66,11 @@ export const RegisterService = async (param: IRegisterParam) => {
             .toString(36)
             .substring(2, 8)
             .toUpperCase()}`,
-          discount: 10000, // Nilai diskon kupon
-          expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90), // Kupon berlaku 3 bulan
+          discount: 10000,
+          expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90),
         },
       });
     }
-
     return newUser;
   });
 
@@ -112,6 +110,7 @@ export const LoginService = async (param: ILoginParam) => {
       role: user.role,
       referralCode: user.referralCode,
       isVerified: user.isVerified,
+      userPoints: user.userPoints,
     },
   };
 };
