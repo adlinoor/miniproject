@@ -16,7 +16,7 @@ const router = (0, express_1.Router)();
 // =======================
 //
 // Buat transaksi baru (checkout event)
-router.post("/", auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeRoles)(client_1.Role.CUSTOMER), upload_1.default.single("payment_proof"), // Upload bukti pembayaran
+router.post("/", auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeRoles)(client_1.Role.CUSTOMER), upload_1.default.single("paymentProof"), // Upload bukti pembayaran
 transaction_controller_1.createEventTransaction);
 // Lihat detail transaksi (milik sendiri)
 router.get("/:id", auth_middleware_1.authenticate, transaction_controller_1.getTransactionDetails);
