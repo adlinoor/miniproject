@@ -29,6 +29,7 @@ router.post(
   authenticate,
   authorizeRoles(Role.CUSTOMER),
   upload.single("paymentProof"), // Upload bukti pembayaran
+  uploadImageAndAttachUrl, // Upload dan attach URL bukti pembayaran
   createEventTransaction
 );
 

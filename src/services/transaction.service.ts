@@ -19,10 +19,10 @@ export const createTransaction = async (
   quantity: number,
   voucherCode?: string,
   pointsUsed?: number,
-  ticketTypeId?: number
+  ticketTypeId?: number,
+  paymentProof?: string
 ) => {
   return await prisma.$transaction(async (tx) => {
-    // 1. Validate event and user
     const [event, user] = await Promise.all([
       tx.event.findUnique({
         where: { id: eventId },
@@ -44,7 +44,6 @@ export const createTransaction = async (
       throw new Error("Not enough available seats for this event");
     }
 
-    // 2. Handle ticket type if specified
     let ticketPrice = event.price;
     if (ticketTypeId) {
       const ticket = event.tickets.find((t) => t.id === ticketTypeId);
@@ -55,7 +54,6 @@ export const createTransaction = async (
       ticketPrice = ticket.price;
     }
 
-    // 3. Calculate price with discounts
     let totalPrice = ticketPrice * quantity;
     let appliedVoucherId: string | null = null;
 
@@ -83,7 +81,6 @@ export const createTransaction = async (
       totalPrice = Math.max(0, totalPrice - pointsUsed);
     }
 
-    // 4. Create transaction
     const isFree = totalPrice === 0;
 
     const transaction = await tx.transaction.create({
@@ -100,6 +97,7 @@ export const createTransaction = async (
           : new Date(Date.now() + PAYMENT_WINDOW_HOURS * 60 * 60 * 1000),
         voucherCode,
         pointsUsed: pointsUsed || 0,
+        paymentProof, // ✅ simpan ke DB
         details: ticketTypeId
           ? {
               create: [
@@ -114,7 +112,6 @@ export const createTransaction = async (
       include: { event: true, user: true, details: true },
     });
 
-    // 5. Update inventory
     const updateOperations: Promise<any>[] = [];
 
     updateOperations.push(

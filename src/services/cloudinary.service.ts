@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import streamifier from "streamifier";
+import { Readable } from "stream";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
@@ -12,13 +13,19 @@ export const uploadToCloudinary = (
 ): Promise<string> => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      { folder: "event-management" },
+      { folder: "payment_proofs" },
       (error, result) => {
-        if (result) resolve(result.secure_url);
-        else reject(error);
+        if (error) {
+          return reject(error);
+        }
+        if (result?.secure_url) {
+          resolve(result.secure_url);
+        } else {
+          reject(new Error("No secure_url returned by Cloudinary"));
+        }
       }
     );
 
-    streamifier.createReadStream(file.buffer).pipe(stream);
+    Readable.from(file.buffer).pipe(stream);
   });
 };
