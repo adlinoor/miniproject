@@ -21,6 +21,7 @@ const express_rate_limit_1 = require("express-rate-limit");
 const dotenv_1 = __importDefault(require("dotenv"));
 const prisma_1 = __importDefault(require("./lib/prisma"));
 const error_middleware_1 = require("./middleware/error.middleware");
+// Routers
 const auth_routers_1 = __importDefault(require("./routers/auth.routers"));
 const coupon_routers_1 = __importDefault(require("./routers/coupon.routers"));
 const event_routers_1 = __importDefault(require("./routers/event.routers"));
@@ -47,13 +48,13 @@ for (const key of requiredEnvVars) {
         process.exit(1);
     }
 }
+// console.log("All env loaded!");
 const app = (0, express_1.default)();
-// ======================
-//      Middleware
-// ======================
+/* ======= Middleware ======= */
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)({
-    origin: true,
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
 }));
 if (process.env.NODE_ENV === "production") {
     app.use((0, express_rate_limit_1.rateLimit)({
@@ -66,9 +67,7 @@ app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
 app.use((0, morgan_1.default)("dev"));
 app.use((0, cookie_parser_1.default)());
-// ======================
-//       Routes
-// ======================
+/* ======= Routes ======= */
 app.use("/api/auth", auth_routers_1.default);
 app.use("/api/coupons", coupon_routers_1.default);
 app.use("/api/events", event_routers_1.default);
@@ -77,7 +76,7 @@ app.use("/api/reviews", review_routers_1.default);
 app.use("/api/statistics", statistic_routers_1.default);
 app.use("/api/transactions", transaction_routers_1.default);
 app.use("/api/users", user_routers_1.default);
-// Health check
+/* ======= Health check ======= */
 app.get("/api/health", (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield prisma_1.default.$queryRaw `SELECT 1`;
@@ -95,7 +94,7 @@ app.get("/api/health", (_req, res) => __awaiter(void 0, void 0, void 0, function
         });
     }
 }));
-// Global error handler
+/* ======= Global error handler ======= */
 app.use(error_middleware_1.errorHandler);
 require("./utils/cron");
 // ✅ Untuk Vercel (serverless)

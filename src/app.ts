@@ -7,6 +7,8 @@ import { rateLimit } from "express-rate-limit";
 import dotenv from "dotenv";
 import prisma from "./lib/prisma";
 import { errorHandler } from "./middleware/error.middleware";
+
+// Routers
 import authRouter from "./routers/auth.routers";
 import couponRouter from "./routers/coupon.routers";
 import eventRouter from "./routers/event.routers";
@@ -36,19 +38,18 @@ for (const key of requiredEnvVars) {
     process.exit(1);
   }
 }
+// console.log("All env loaded!");
 
 const app = express();
 
-// ======================
-//      Middleware
-// ======================
+/* ======= Middleware ======= */
 app.use(helmet());
 app.use(
   cors({
-    origin: true,
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
   })
 );
-
 if (process.env.NODE_ENV === "production") {
   app.use(
     rateLimit({
@@ -58,15 +59,12 @@ if (process.env.NODE_ENV === "production") {
     })
   );
 }
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 app.use(cookieParser());
 
-// ======================
-//       Routes
-// ======================
+/* ======= Routes ======= */
 app.use("/api/auth", authRouter);
 app.use("/api/coupons", couponRouter);
 app.use("/api/events", eventRouter);
@@ -76,7 +74,7 @@ app.use("/api/statistics", statisticRouter);
 app.use("/api/transactions", transactionRouter);
 app.use("/api/users", userRouter);
 
-// Health check
+/* ======= Health check ======= */
 app.get("/api/health", async (_req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -94,7 +92,7 @@ app.get("/api/health", async (_req, res) => {
   }
 });
 
-// Global error handler
+/* ======= Global error handler ======= */
 app.use(errorHandler);
 
 import "./utils/cron";
