@@ -28,6 +28,7 @@ const getUserById = (userId) => __awaiter(void 0, void 0, void 0, function* () {
             userPoints: true,
             createdAt: true,
             referralCode: true,
+            isVerified: true,
         },
     });
 });

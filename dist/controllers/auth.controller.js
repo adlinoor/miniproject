@@ -74,9 +74,11 @@ exports.loginSchema = zod_1.z.object({
 // ====================
 const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        // ⬇️ Buat user baru
-        yield authService.RegisterService(req.body);
-        // ⬇️ Langsung login ulang supaya dapat token dan user lengkap (dengan referralCode)
+        // 1. Register User (isVerified = false)
+        const newUser = yield authService.RegisterService(req.body);
+        // 2. Kirim Email Verifikasi (berisi link ke /verify-email/:email)
+        yield (0, email_service_1.sendVerificationEmail)(newUser.email);
+        // 3. Auto login, kirim token & user (opsional: boleh pending sebelum verifikasi)
         const { token, user: fullUser } = yield authService.LoginService({
             email: req.body.email,
             password: req.body.password,
@@ -85,12 +87,12 @@ const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-            maxAge: 24 * 60 * 60 * 1000, // 1 hari
+            maxAge: 24 * 60 * 60 * 1000,
         });
         res.status(201).json({
-            token, // ⬅️ Tambahkan token di sini!
+            token,
             user: fullUser,
-            message: "Registration successful",
+            message: "Registration successful. Please verify your email.",
         });
     }
     catch (error) {

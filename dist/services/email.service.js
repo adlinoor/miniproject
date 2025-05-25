@@ -12,8 +12,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendEmail = exports.mailer = void 0;
+exports.sendVerificationEmail = exports.sendEmail = exports.mailer = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
+const handlebars_1 = __importDefault(require("handlebars"));
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
 exports.mailer = nodemailer_1.default.createTransport({
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT),
@@ -25,10 +28,21 @@ exports.mailer = nodemailer_1.default.createTransport({
 });
 const sendEmail = (to, subject, html) => __awaiter(void 0, void 0, void 0, function* () {
     yield exports.mailer.sendMail({
-        from: `"Event Management" <${process.env.SMTP_FROM}>`,
+        from: `"ARevents" <${process.env.NODEMAILER_USER}>`,
         to,
         subject,
         html,
     });
 });
 exports.sendEmail = sendEmail;
+// Kirim email verifikasi
+const sendVerificationEmail = (to) => __awaiter(void 0, void 0, void 0, function* () {
+    const filePath = path_1.default.join(__dirname, "../templates/register-template.hbs");
+    const source = fs_1.default.readFileSync(filePath, "utf-8").toString();
+    const template = handlebars_1.default.compile(source);
+    // Link ke FE/BE endpoint verifikasi (bisa email sebagai param, atau id + token jika mau aman)
+    const verify_url = `${process.env.FRONTEND_URL}/verify-email/${encodeURIComponent(to)}`;
+    const html = template({ email: to, verify_url });
+    yield (0, exports.sendEmail)(to, "ARevents: Verify Your Account", html);
+});
+exports.sendVerificationEmail = sendVerificationEmail;

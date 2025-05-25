@@ -17,6 +17,7 @@ export const getUserById = async (
       userPoints: true,
       createdAt: true,
       referralCode: true,
+      isVerified: true,
     },
   });
 };

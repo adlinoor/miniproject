@@ -5,7 +5,7 @@ import crypto from "crypto";
 import bcrypt from "bcrypt";
 import { Role } from "@prisma/client";
 import * as authService from "../services/auth.service";
-import { sendEmail } from "../services/email.service";
+import { sendEmail, sendVerificationEmail } from "../services/email.service";
 import prisma from "../lib/prisma";
 
 dotenv.config();
@@ -31,10 +31,13 @@ export const loginSchema = z.object({
 // ====================
 export const register = async (req: Request, res: Response) => {
   try {
-    // ⬇️ Buat user baru
-    await authService.RegisterService(req.body);
+    // 1. Register User (isVerified = false)
+    const newUser = await authService.RegisterService(req.body);
 
-    // ⬇️ Langsung login ulang supaya dapat token dan user lengkap (dengan referralCode)
+    // 2. Kirim Email Verifikasi (berisi link ke /verify-email/:email)
+    await sendVerificationEmail(newUser.email);
+
+    // 3. Auto login, kirim token & user (opsional: boleh pending sebelum verifikasi)
     const { token, user: fullUser } = await authService.LoginService({
       email: req.body.email,
       password: req.body.password,
@@ -44,13 +47,13 @@ export const register = async (req: Request, res: Response) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 24 * 60 * 60 * 1000, // 1 hari
+      maxAge: 24 * 60 * 60 * 1000,
     });
 
     res.status(201).json({
-      token, // ⬅️ Tambahkan token di sini!
+      token,
       user: fullUser,
-      message: "Registration successful",
+      message: "Registration successful. Please verify your email.",
     });
   } catch (error) {
     res.status(400).json({
