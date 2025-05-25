@@ -16,6 +16,7 @@ export const getUserById = async (
       role: true,
       userPoints: true,
       createdAt: true,
+      referralCode: true,
     },
   });
 };

@@ -45,8 +45,7 @@ const app = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: true, // izinkan semua origin
-    credentials: true,
+    origin: true,
   })
 );
 
@@ -69,7 +68,7 @@ app.use(cookieParser());
 //       Routes
 // ======================
 app.use("/api/auth", authRouter);
-app.use("/coupons", couponRouter);
+app.use("/api/coupons", couponRouter);
 app.use("/api/events", eventRouter);
 app.use("/api/promotions", promotionRouter);
 app.use("/api/reviews", reviewRouter);

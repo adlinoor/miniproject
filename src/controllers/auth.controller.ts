@@ -48,7 +48,8 @@ export const register = async (req: Request, res: Response) => {
     });
 
     res.status(201).json({
-      user: fullUser, // ✅ Sudah termasuk referralCode dari LoginService
+      token, // ⬅️ Tambahkan token di sini!
+      user: fullUser,
       message: "Registration successful",
     });
   } catch (error) {

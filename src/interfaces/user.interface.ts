@@ -1,7 +1,7 @@
 import { Role } from "@prisma/client";
 
 export interface IRegisterParam {
-  referralCode: any;
+  referralCode?: string;
   email: string;
   password: string;
   first_name: string;
