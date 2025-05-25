@@ -53,10 +53,8 @@ const app = (0, express_1.default)();
 /* ======= Middleware ======= */
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: process.env.FRONTEND_URL,
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
 }));
 if (process.env.NODE_ENV === "production") {
     app.use((0, express_rate_limit_1.rateLimit)({
