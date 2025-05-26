@@ -15,23 +15,30 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const vitest_1 = require("vitest");
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const auth_service_1 = require("../services/auth.service");
+const TEST_EMAILS = [
+    "user1@example.com",
+    "user2@example.com",
+    "user3@example.com",
+    "user4@example.com",
+    "referrer@example.com",
+];
 (0, vitest_1.beforeAll)(() => __awaiter(void 0, void 0, void 0, function* () {
-    yield prisma_1.default.transactionDetail.deleteMany({});
-    yield prisma_1.default.transaction.deleteMany({});
-    yield prisma_1.default.point.deleteMany({});
-    yield prisma_1.default.coupon.deleteMany({});
-    yield prisma_1.default.review.deleteMany({});
-    yield prisma_1.default.event.deleteMany({});
-    yield prisma_1.default.user.deleteMany({});
+    yield prisma_1.default.coupon.deleteMany({
+        where: { user: { email: { in: TEST_EMAILS } } },
+    });
+    yield prisma_1.default.point.deleteMany({
+        where: { user: { email: { in: TEST_EMAILS } } },
+    });
+    yield prisma_1.default.user.deleteMany({ where: { email: { in: TEST_EMAILS } } });
 }));
 (0, vitest_1.afterAll)(() => __awaiter(void 0, void 0, void 0, function* () {
-    yield prisma_1.default.transactionDetail.deleteMany({});
-    yield prisma_1.default.transaction.deleteMany({});
-    yield prisma_1.default.point.deleteMany({});
-    yield prisma_1.default.coupon.deleteMany({});
-    yield prisma_1.default.review.deleteMany({});
-    yield prisma_1.default.event.deleteMany({});
-    yield prisma_1.default.user.deleteMany({});
+    yield prisma_1.default.coupon.deleteMany({
+        where: { user: { email: { in: TEST_EMAILS } } },
+    });
+    yield prisma_1.default.point.deleteMany({
+        where: { user: { email: { in: TEST_EMAILS } } },
+    });
+    yield prisma_1.default.user.deleteMany({ where: { email: { in: TEST_EMAILS } } });
     yield prisma_1.default.$disconnect();
 }));
 (0, vitest_1.describe)("Referral Registration", () => {
