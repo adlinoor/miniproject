@@ -55,9 +55,6 @@ const authService = __importStar(require("../services/auth.service"));
 const email_service_1 = require("../services/email.service");
 const prisma_1 = __importDefault(require("../lib/prisma"));
 dotenv_1.default.config();
-// ====================
-// 🔐 SCHEMA VALIDATION
-// ====================
 exports.registerSchema = zod_1.z.object({
     first_name: zod_1.z.string().min(1, "First name is required"),
     last_name: zod_1.z.string().min(1, "Last name is required"),
@@ -69,16 +66,14 @@ exports.loginSchema = zod_1.z.object({
     email: zod_1.z.string().email("Invalid email format"),
     password: zod_1.z.string().min(1, "Password is required"),
 });
-// ====================
-// 👤 REGISTER
-// ====================
+// REGISTER
 const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        // 1. Register User (isVerified = false)
         const newUser = yield authService.RegisterService(req.body);
-        // 2. Kirim Email Verifikasi (berisi link ke /verify-email/:email)
+        if (!newUser) {
+            return res.status(500).json({ error: "Failed to create user." });
+        }
         yield (0, email_service_1.sendVerificationEmail)(newUser.email);
-        // 3. Auto login, kirim token & user (opsional: boleh pending sebelum verifikasi)
         const { token, user: fullUser } = yield authService.LoginService({
             email: req.body.email,
             password: req.body.password,
@@ -102,9 +97,7 @@ const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.register = register;
-// ====================
-// 🔓 LOGIN
-// ====================
+// LOGIN
 const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const validatedData = exports.loginSchema.parse(req.body);
@@ -134,9 +127,7 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.login = login;
-// ============================
-// 🔁 FORGOT PASSWORD - Send link
-// ============================
+// FORGOT PASSWORD
 const forgotPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email } = req.body;
     const user = yield prisma_1.default.user.findUnique({ where: { email } });
@@ -159,9 +150,7 @@ const forgotPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
     return res.status(200).json({ message: "Reset link sent to your email" });
 });
 exports.forgotPassword = forgotPassword;
-// ============================
-// 🔁 RESET PASSWORD - Use token
-// ============================
+// RESET PASSWORD
 const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { token } = req.params;
     const { password } = req.body;

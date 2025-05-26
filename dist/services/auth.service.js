@@ -18,7 +18,8 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const point_service_1 = require("./point.service");
-// Service untuk registrasi pengguna
+const helpers_1 = require("../utils/helpers");
+// REGISTER SERVICE
 const RegisterService = (param) => __awaiter(void 0, void 0, void 0, function* () {
     if (!Object.values(client_1.Role).includes(param.role)) {
         throw new Error(`Invalid role. Must be one of: ${Object.values(client_1.Role).join(", ")}`);
@@ -29,10 +30,7 @@ const RegisterService = (param) => __awaiter(void 0, void 0, void 0, function* (
     if (isExist)
         throw new Error("Email already registered");
     const hashedPassword = yield bcrypt_1.default.hash(param.password, 10);
-    const referralCode = `REF-${Math.random()
-        .toString(36)
-        .substring(2, 10)
-        .toUpperCase()}`;
+    const referralCode = (0, helpers_1.generateReferralCode)();
     let referredByUser = null;
     if (param.referralCode) {
         referredByUser = yield prisma_1.default.user.findUnique({
@@ -41,7 +39,6 @@ const RegisterService = (param) => __awaiter(void 0, void 0, void 0, function* (
         if (!referredByUser)
             throw new Error("Invalid referral code");
     }
-    // ⬇️ TRANSACTION FINAL
     const user = yield prisma_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
         // 1. Buat user baru
         const newUser = yield tx.user.create({
@@ -57,31 +54,29 @@ const RegisterService = (param) => __awaiter(void 0, void 0, void 0, function* (
                 userPoints: 0, // default
             },
         });
-        // 2. Jika pakai referral, reward ke referrer & new user (via addPoints)
+        // 2. Referral reward
         if (referredByUser) {
-            // a. Referrer (yang kasih kode) dapat 10.000 point
-            yield (0, point_service_1.addPoints)(tx, referredByUser.id, 10000);
-            // b. User baru juga dapat 10.000 point
-            yield (0, point_service_1.addPoints)(tx, newUser.id, 10000);
-            // c. Buat coupon ke user baru (opsional, bisa dihapus kalau tidak pakai kupon)
+            yield (0, point_service_1.addPoints)(tx, referredByUser.id, 10000); // Referrer dapat 10k poin
+            yield (0, point_service_1.addPoints)(tx, newUser.id, 10000); // User baru dapat 10k poin
             yield tx.coupon.create({
                 data: {
                     userId: newUser.id,
-                    code: `COUP-${Math.random()
-                        .toString(36)
-                        .substring(2, 8)
-                        .toUpperCase()}`,
+                    code: (0, helpers_1.generateCouponCode)(),
                     discount: 10000,
                     expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90),
                 },
             });
         }
-        return newUser;
+        // 3. REFETCH untuk dapat userPoints yang sudah diupdate
+        const userWithUpdatedPoints = yield tx.user.findUnique({
+            where: { id: newUser.id },
+        });
+        return userWithUpdatedPoints;
     }));
     return user;
 });
 exports.RegisterService = RegisterService;
-// Service untuk login pengguna
+// LOGIN SERVICE
 const LoginService = (param) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield prisma_1.default.user.findFirst({
         where: { email: param.email },

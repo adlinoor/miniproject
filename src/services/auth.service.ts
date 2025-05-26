@@ -4,9 +4,9 @@ import jwt from "jsonwebtoken";
 import prisma from "../lib/prisma";
 import { IRegisterParam, ILoginParam } from "../interfaces/user.interface";
 import { addPoints } from "./point.service";
+import { generateReferralCode, generateCouponCode } from "../utils/helpers";
 
-// Service untuk registrasi pengguna
-
+// REGISTER SERVICE
 export const RegisterService = async (param: IRegisterParam) => {
   if (!Object.values(Role).includes(param.role)) {
     throw new Error(
@@ -20,10 +20,7 @@ export const RegisterService = async (param: IRegisterParam) => {
   if (isExist) throw new Error("Email already registered");
 
   const hashedPassword = await bcrypt.hash(param.password, 10);
-  const referralCode = `REF-${Math.random()
-    .toString(36)
-    .substring(2, 10)
-    .toUpperCase()}`;
+  const referralCode = generateReferralCode();
   let referredByUser = null;
 
   if (param.referralCode) {
@@ -33,7 +30,6 @@ export const RegisterService = async (param: IRegisterParam) => {
     if (!referredByUser) throw new Error("Invalid referral code");
   }
 
-  // ⬇️ TRANSACTION FINAL
   const user = await prisma.$transaction(async (tx) => {
     // 1. Buat user baru
     const newUser = await tx.user.create({
@@ -50,34 +46,31 @@ export const RegisterService = async (param: IRegisterParam) => {
       },
     });
 
-    // 2. Jika pakai referral, reward ke referrer & new user (via addPoints)
+    // 2. Referral reward
     if (referredByUser) {
-      // a. Referrer (yang kasih kode) dapat 10.000 point
-      await addPoints(tx, referredByUser.id, 10000);
-
-      // b. User baru juga dapat 10.000 point
-      await addPoints(tx, newUser.id, 10000);
-
-      // c. Buat coupon ke user baru (opsional, bisa dihapus kalau tidak pakai kupon)
+      await addPoints(tx, referredByUser.id, 10000); // Referrer dapat 10k poin
+      await addPoints(tx, newUser.id, 10000); // User baru dapat 10k poin
       await tx.coupon.create({
         data: {
           userId: newUser.id,
-          code: `COUP-${Math.random()
-            .toString(36)
-            .substring(2, 8)
-            .toUpperCase()}`,
+          code: generateCouponCode(),
           discount: 10000,
           expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90),
         },
       });
     }
-    return newUser;
+
+    // 3. REFETCH untuk dapat userPoints yang sudah diupdate
+    const userWithUpdatedPoints = await tx.user.findUnique({
+      where: { id: newUser.id },
+    });
+    return userWithUpdatedPoints;
   });
 
   return user;
 };
 
-// Service untuk login pengguna
+// LOGIN SERVICE
 export const LoginService = async (param: ILoginParam) => {
   const user = await prisma.user.findFirst({
     where: { email: param.email },

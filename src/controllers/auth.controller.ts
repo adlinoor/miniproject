@@ -10,9 +10,6 @@ import prisma from "../lib/prisma";
 
 dotenv.config();
 
-// ====================
-// 🔐 SCHEMA VALIDATION
-// ====================
 export const registerSchema = z.object({
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().min(1, "Last name is required"),
@@ -26,18 +23,16 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-// ====================
-// 👤 REGISTER
-// ====================
+// REGISTER
 export const register = async (req: Request, res: Response) => {
   try {
-    // 1. Register User (isVerified = false)
     const newUser = await authService.RegisterService(req.body);
+    if (!newUser) {
+      return res.status(500).json({ error: "Failed to create user." });
+    }
 
-    // 2. Kirim Email Verifikasi (berisi link ke /verify-email/:email)
     await sendVerificationEmail(newUser.email);
 
-    // 3. Auto login, kirim token & user (opsional: boleh pending sebelum verifikasi)
     const { token, user: fullUser } = await authService.LoginService({
       email: req.body.email,
       password: req.body.password,
@@ -62,9 +57,7 @@ export const register = async (req: Request, res: Response) => {
   }
 };
 
-// ====================
-// 🔓 LOGIN
-// ====================
+// LOGIN
 export const login = async (req: Request, res: Response) => {
   try {
     const validatedData = loginSchema.parse(req.body);
@@ -89,26 +82,21 @@ export const login = async (req: Request, res: Response) => {
         details: error.errors,
       });
     }
-
     res.status(401).json({
       error: "Invalid credentials",
     });
   }
 };
 
-// ============================
-// 🔁 FORGOT PASSWORD - Send link
-// ============================
+// FORGOT PASSWORD
 export const forgotPassword = async (req: Request, res: Response) => {
   const { email } = req.body;
-
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
     return res.status(200).json({
       message: "If your email is registered, a reset link has been sent.",
     });
   }
-
   const token = crypto.randomBytes(32).toString("hex");
   const expires = new Date(Date.now() + 60 * 60 * 1000);
 
@@ -126,9 +114,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
   return res.status(200).json({ message: "Reset link sent to your email" });
 };
 
-// ============================
-// 🔁 RESET PASSWORD - Use token
-// ============================
+// RESET PASSWORD
 export const resetPassword = async (req: Request, res: Response) => {
   const { token } = req.params;
   const { password } = req.body;
