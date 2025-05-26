@@ -1,26 +1,33 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import prisma from "../lib/prisma";
 import { RegisterService } from "../services/auth.service";
-import { IRegisterParam } from "../interfaces/user.interface";
+
+const TEST_EMAILS = [
+  "user1@example.com",
+  "user2@example.com",
+  "user3@example.com",
+  "user4@example.com",
+  "referrer@example.com",
+];
 
 beforeAll(async () => {
-  await prisma.transactionDetail.deleteMany({});
-  await prisma.transaction.deleteMany({});
-  await prisma.point.deleteMany({});
-  await prisma.coupon.deleteMany({});
-  await prisma.review.deleteMany({});
-  await prisma.event.deleteMany({});
-  await prisma.user.deleteMany({});
+  await prisma.coupon.deleteMany({
+    where: { user: { email: { in: TEST_EMAILS } } },
+  });
+  await prisma.point.deleteMany({
+    where: { user: { email: { in: TEST_EMAILS } } },
+  });
+  await prisma.user.deleteMany({ where: { email: { in: TEST_EMAILS } } });
 });
 
 afterAll(async () => {
-  await prisma.transactionDetail.deleteMany({});
-  await prisma.transaction.deleteMany({});
-  await prisma.point.deleteMany({});
-  await prisma.coupon.deleteMany({});
-  await prisma.review.deleteMany({});
-  await prisma.event.deleteMany({});
-  await prisma.user.deleteMany({});
+  await prisma.coupon.deleteMany({
+    where: { user: { email: { in: TEST_EMAILS } } },
+  });
+  await prisma.point.deleteMany({
+    where: { user: { email: { in: TEST_EMAILS } } },
+  });
+  await prisma.user.deleteMany({ where: { email: { in: TEST_EMAILS } } });
   await prisma.$disconnect();
 });
 
