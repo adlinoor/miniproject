@@ -51,14 +51,6 @@ router.get(
   getMyEvents
 );
 
-// Lihat detail transaksi (milik sendiri)
-router.get(
-  "/:id",
-  authenticate,
-  authorizeRoles(Role.CUSTOMER, Role.ORGANIZER),
-  getTransactionDetails
-);
-
 // Upload bukti pembayaran ke Cloudinary
 router.patch(
   "/:id/payment-proof",
@@ -95,6 +87,14 @@ router.put(
 //  GENERAL / SHARED
 // =======================
 //
+
+// Lihat detail transaksi (milik sendiri)
+router.get(
+  "/:id",
+  authenticate,
+  authorizeRoles(Role.CUSTOMER, Role.ORGANIZER),
+  getTransactionDetails
+);
 
 // Update transaksi secara umum (fallback legacy / manual)
 router.put("/:id", authenticate, updateTransaction);

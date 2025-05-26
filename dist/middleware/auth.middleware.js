@@ -56,8 +56,8 @@ const authorizeRoles = (...roles) => {
 };
 exports.authorizeRoles = authorizeRoles;
 const requireVerified = (req, res, next) => {
-    var _a;
-    if (!((_a = req.user) === null || _a === void 0 ? void 0 : _a.isVerified)) {
+    var _a, _b;
+    if (((_a = req.user) === null || _a === void 0 ? void 0 : _a.role) === "CUSTOMER" && !((_b = req.user) === null || _b === void 0 ? void 0 : _b.isVerified)) {
         return res.status(403).json({ message: "Please verify your email first" });
     }
     next();

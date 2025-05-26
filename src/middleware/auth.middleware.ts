@@ -70,7 +70,7 @@ export const requireVerified = (
   res: Response,
   next: NextFunction
 ) => {
-  if (!req.user?.isVerified) {
+  if (req.user?.role === "CUSTOMER" && !req.user?.isVerified) {
     return res.status(403).json({ message: "Please verify your email first" });
   }
   next();

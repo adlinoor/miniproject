@@ -93,11 +93,18 @@ export const createEventTransaction = async (req: Request, res: Response) => {
 export const getTransactionDetails = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const transactionId = parseInt(id, 10);
+    if (!id || isNaN(Number(id))) {
+      return res.status(400).json({ message: "Invalid transaction id" });
+    }
+    const transactionId = Number(id);
     const userId = req.user?.id;
     const userRole = req.user?.role;
 
     const transaction = await getTransaction(transactionId);
+
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
 
     if (userRole === Role.CUSTOMER && transaction.userId !== userId) {
       return res
@@ -216,16 +223,20 @@ export const getOrganizerTransactions = async (req: Request, res: Response) => {
     const organizerId = req.user?.id;
     if (!organizerId) return res.status(401).json({ message: "Unauthorized" });
 
+    // Ambil SEMUA transaksi dari event yang dimiliki ORGANIZER
     const transactions = await prisma.transaction.findMany({
-      where: { event: { organizerId } },
+      where: {
+        event: { organizerId },
+      },
       include: {
         user: true,
         event: true,
         details: { include: { ticket: true } },
       },
+      orderBy: { createdAt: "desc" },
     });
 
-    return res.json(transactions);
+    return res.json({ data: transactions });
   } catch (error) {
     console.error("Error fetching organizer transactions:", error);
     return res.status(500).json({ message: "Server error" });

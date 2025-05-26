@@ -92,10 +92,16 @@ const getTransactionDetails = (req, res) => __awaiter(void 0, void 0, void 0, fu
     var _a, _b;
     try {
         const { id } = req.params;
-        const transactionId = parseInt(id, 10);
+        if (!id || isNaN(Number(id))) {
+            return res.status(400).json({ message: "Invalid transaction id" });
+        }
+        const transactionId = Number(id);
         const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
         const userRole = (_b = req.user) === null || _b === void 0 ? void 0 : _b.role;
         const transaction = yield (0, transaction_service_1.getTransaction)(transactionId);
+        if (!transaction) {
+            return res.status(404).json({ message: "Transaction not found" });
+        }
         if (userRole === client_1.Role.CUSTOMER && transaction.userId !== userId) {
             return res
                 .status(403)
@@ -206,15 +212,19 @@ const getOrganizerTransactions = (req, res) => __awaiter(void 0, void 0, void 0,
         const organizerId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
         if (!organizerId)
             return res.status(401).json({ message: "Unauthorized" });
+        // Ambil SEMUA transaksi dari event yang dimiliki ORGANIZER
         const transactions = yield prisma_1.default.transaction.findMany({
-            where: { event: { organizerId } },
+            where: {
+                event: { organizerId },
+            },
             include: {
                 user: true,
                 event: true,
                 details: { include: { ticket: true } },
             },
+            orderBy: { createdAt: "desc" },
         });
-        return res.json(transactions);
+        return res.json({ data: transactions });
     }
     catch (error) {
         console.error("Error fetching organizer transactions:", error);
