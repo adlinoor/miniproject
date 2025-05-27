@@ -15,48 +15,45 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getEventReviews = exports.createReview = void 0;
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const client_1 = require("@prisma/client");
-/**
- * Create a new review for an event by a customer.
- */
+// Buat ulasan baru
 const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
         const { eventId, rating, comment } = req.body;
-        // 1. Validate required fields
-        if (!eventId || !rating) {
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        // Validasi login
+        if (!userId) {
+            return res.status(401).json({ message: "Authentication required" });
+        }
+        // Validasi input
+        if (!eventId || rating == null) {
             return res
                 .status(400)
                 .json({ message: "Event ID and rating are required" });
-        }
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
-        if (!userId) {
-            return res.status(401).json({ message: "Authentication required" });
         }
         if (rating < 1 || rating > 5) {
             return res
                 .status(400)
                 .json({ message: "Rating must be between 1 and 5" });
         }
-        // 2. Ensure user has completed a transaction and the event has ended
+        // Cek apakah user pernah ikut event dan status transaksi selesai
         const hasAttended = yield prisma_1.default.transaction.findFirst({
             where: {
                 userId,
                 eventId: Number(eventId),
                 status: client_1.TransactionStatus.DONE,
                 event: {
-                    endDate: { lt: new Date() },
+                    endDate: { lt: new Date() }, // Event sudah berakhir
                 },
             },
             select: { id: true },
         });
         if (!hasAttended) {
-            return res
-                .status(403)
-                .json({
-                message: "You can only review events you've attended after they end",
+            return res.status(403).json({
+                message: "Kamu hanya bisa memberi ulasan setelah mengikuti dan menyelesaikan event.",
             });
         }
-        // 3. Check if review already exists
+        // Cek apakah user sudah review event ini
         const existingReview = yield prisma_1.default.review.findFirst({
             where: {
                 userId,
@@ -67,9 +64,9 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         if (existingReview) {
             return res
                 .status(409)
-                .json({ message: "You have already reviewed this event" });
+                .json({ message: "Kamu sudah memberikan ulasan untuk event ini." });
         }
-        // 4. Create the review
+        // Simpan review
         const review = yield prisma_1.default.review.create({
             data: {
                 userId,
@@ -92,7 +89,7 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             },
         });
         return res.status(201).json({
-            message: "Review created successfully",
+            message: "Review berhasil dikirim",
             review,
         });
     }
@@ -105,9 +102,7 @@ const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     }
 });
 exports.createReview = createReview;
-/**
- * Get all reviews for a specific event.
- */
+// Ambil semua review untuk 1 event
 const getEventReviews = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { eventId } = req.params;

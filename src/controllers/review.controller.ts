@@ -2,23 +2,22 @@ import { Request, Response } from "express";
 import prisma from "../lib/prisma";
 import { TransactionStatus } from "@prisma/client";
 
-/**
- * Create a new review for an event by a customer.
- */
+// Buat ulasan baru
 export const createReview = async (req: Request, res: Response) => {
   try {
     const { eventId, rating, comment } = req.body;
+    const userId = req.user?.id;
 
-    // 1. Validate required fields
-    if (!eventId || !rating) {
+    // Validasi login
+    if (!userId) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    // Validasi input
+    if (!eventId || rating == null) {
       return res
         .status(400)
         .json({ message: "Event ID and rating are required" });
-    }
-
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ message: "Authentication required" });
     }
 
     if (rating < 1 || rating > 5) {
@@ -27,28 +26,27 @@ export const createReview = async (req: Request, res: Response) => {
         .json({ message: "Rating must be between 1 and 5" });
     }
 
-    // 2. Ensure user has completed a transaction and the event has ended
+    // Cek apakah user pernah ikut event dan status transaksi selesai
     const hasAttended = await prisma.transaction.findFirst({
       where: {
         userId,
         eventId: Number(eventId),
         status: TransactionStatus.DONE,
         event: {
-          endDate: { lt: new Date() },
+          endDate: { lt: new Date() }, // Event sudah berakhir
         },
       },
       select: { id: true },
     });
 
     if (!hasAttended) {
-      return res
-        .status(403)
-        .json({
-          message: "You can only review events you've attended after they end",
-        });
+      return res.status(403).json({
+        message:
+          "Kamu hanya bisa memberi ulasan setelah mengikuti dan menyelesaikan event.",
+      });
     }
 
-    // 3. Check if review already exists
+    // Cek apakah user sudah review event ini
     const existingReview = await prisma.review.findFirst({
       where: {
         userId,
@@ -60,10 +58,10 @@ export const createReview = async (req: Request, res: Response) => {
     if (existingReview) {
       return res
         .status(409)
-        .json({ message: "You have already reviewed this event" });
+        .json({ message: "Kamu sudah memberikan ulasan untuk event ini." });
     }
 
-    // 4. Create the review
+    // Simpan review
     const review = await prisma.review.create({
       data: {
         userId,
@@ -87,7 +85,7 @@ export const createReview = async (req: Request, res: Response) => {
     });
 
     return res.status(201).json({
-      message: "Review created successfully",
+      message: "Review berhasil dikirim",
       review,
     });
   } catch (error) {
@@ -99,9 +97,7 @@ export const createReview = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Get all reviews for a specific event.
- */
+// Ambil semua review untuk 1 event
 export const getEventReviews = async (req: Request, res: Response) => {
   try {
     const { eventId } = req.params;
