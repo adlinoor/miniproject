@@ -7,9 +7,17 @@ export const uploadImageAndAttachUrl = async (
   next: NextFunction
 ) => {
   try {
-    if (req.file) {
+    req.body.imageUrls = [];
+    // multi image support
+    if (req.files && Array.isArray(req.files)) {
+      for (const file of req.files) {
+        const imageUrl = await uploadToCloudinary(file);
+        req.body.imageUrls.push(imageUrl);
+      }
+    } else if (req.file) {
+      // fallback single image
       const imageUrl = await uploadToCloudinary(req.file);
-      req.body.imageUrl = imageUrl;
+      req.body.imageUrls = [imageUrl];
     }
     next();
   } catch (error) {

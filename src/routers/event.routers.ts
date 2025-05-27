@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { Role } from "@prisma/client";
-
 import {
   createEvent,
   getEvents,
@@ -11,48 +10,33 @@ import {
   getEventsByOrganizer,
   getVouchersByEvent,
   createVoucher,
-  createEventSchema,
-  updateEventSchema,
-  // createVoucherSchema, // jika pakai validasi Zod untuk voucher
 } from "../controllers/event.controller";
-
 import {
   validateRequest,
   validateDates,
   validateIdParam,
 } from "../middleware/validator.middleware";
-
 import { authenticate, authorizeRoles } from "../middleware/auth.middleware";
 import upload from "../middleware/upload";
 import { uploadImageAndAttachUrl } from "../middleware/uploadImageAndAttachUrl";
 
 const router = Router();
 
-//
 // ====================
 // 📂 Public Routes
 // ====================
-//
-
 router.get("/", getEvents);
-
 router.get("/:id", validateIdParam("id"), getEventById);
 
-//
 // ==============================
 // 🔒 Protected Routes (ORGANIZER)
 // ==============================
-//
-
-// Lihat semua event milik organizer
 router.get(
   "/organizer/my-events",
   authenticate,
   authorizeRoles(Role.ORGANIZER),
   getEventsByOrganizer
 );
-
-// Lihat daftar peserta event tertentu (khusus organizer pemilik)
 router.get(
   "/:id/attendees",
   authenticate,
@@ -61,15 +45,13 @@ router.get(
   getEventAttendees
 );
 
-// Buat event baru (upload image via multer)
+// Buat event baru (multi image)
 router.post(
   "/",
   authenticate,
   authorizeRoles(Role.ORGANIZER),
-  upload.single("image"), // 💾 multer memory storage
-  uploadImageAndAttachUrl, // ☁️ Cloudinary => inject req.body.imageUrl
-  validateRequest(createEventSchema),
-  validateDates("startDate", "endDate"),
+  upload.array("images"), // 💾 multi-image memory storage
+  uploadImageAndAttachUrl, // ☁️ Cloudinary (inject req.body.imageUrls)
   createEvent
 );
 
@@ -79,8 +61,8 @@ router.put(
   authenticate,
   authorizeRoles(Role.ORGANIZER),
   validateIdParam("id"),
-  validateRequest(updateEventSchema),
-  validateDates("startDate", "endDate"),
+  upload.array("images"), // multi-image
+  uploadImageAndAttachUrl,
   updateEvent
 );
 
@@ -93,21 +75,14 @@ router.delete(
   deleteEvent
 );
 
-//
 // 🎟 Voucher Management by Organizer
-//
-
-// Buat voucher untuk event
 router.post(
   "/:eventId/vouchers",
   authenticate,
   authorizeRoles(Role.ORGANIZER),
   validateIdParam("eventId"),
-  // validateRequest(createVoucherSchema), // aktifkan jika pakai validasi Zod
   createVoucher
 );
-
-// Ambil semua voucher dari event
 router.get(
   "/:eventId/vouchers",
   authenticate,

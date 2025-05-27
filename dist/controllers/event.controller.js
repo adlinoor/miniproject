@@ -51,7 +51,7 @@ const zod_1 = require("zod");
 const voucherService = __importStar(require("../services/promotion.service"));
 // === Schema Validation ===
 exports.createEventSchema = zod_1.z.object({
-    title: zod_1.z.string().min(1),
+    name: zod_1.z.string().min(1),
     description: zod_1.z.string().min(1),
     startDate: zod_1.z.string().refine((val) => !isNaN(Date.parse(val)), {
         message: "Invalid start date",
@@ -59,51 +59,67 @@ exports.createEventSchema = zod_1.z.object({
     endDate: zod_1.z
         .string()
         .refine((val) => !isNaN(Date.parse(val)), { message: "Invalid end date" }),
-    location: zod_1.z.string().min(1),
-    category: zod_1.z.string().min(1),
     price: zod_1.z.number().min(0),
-    availableSeats: zod_1.z.number().min(1),
-    imageUrl: zod_1.z.string().url().optional(),
+    seats: zod_1.z.number().min(1),
+    eventType: zod_1.z.enum(["PAID", "FREE"]),
+    category: zod_1.z.string().min(1),
+    city: zod_1.z.string().min(1),
+    location: zod_1.z.string().min(1),
     ticketTypes: zod_1.z
         .array(zod_1.z.object({
         type: zod_1.z.string(),
         price: zod_1.z.number().min(0),
-        quota: zod_1.z.number().min(1),
-        quantity: zod_1.z.number().min(1).optional(),
+        quantity: zod_1.z.number().min(1),
     }))
-        .optional(),
+        .min(1),
+    imageUrls: zod_1.z.array(zod_1.z.string().url()).optional(), // hasil upload middleware
 });
 exports.updateEventSchema = exports.createEventSchema.partial();
-// === Create Event ===
 const createEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
-        const validated = exports.createEventSchema.parse(req.body);
+        // ticketTypes bisa string (dari FormData) atau array
+        let ticketTypes = req.body.ticketTypes;
+        if (typeof ticketTypes === "string")
+            ticketTypes = JSON.parse(ticketTypes);
+        const dataToValidate = Object.assign(Object.assign({}, req.body), { ticketTypes, price: Number(req.body.price), seats: Number(req.body.seats) });
+        const validated = exports.createEventSchema.parse(dataToValidate);
         const organizerId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
         if (!organizerId)
             return res.status(401).json({ status: "error", message: "Unauthorized" });
         const event = yield prisma_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
             var _a;
             const created = yield tx.event.create({
-                data: Object.assign(Object.assign({}, validated), { startDate: new Date(validated.startDate), endDate: new Date(validated.endDate), organizerId }),
+                data: {
+                    title: validated.name,
+                    description: validated.description,
+                    startDate: new Date(validated.startDate),
+                    endDate: new Date(validated.endDate),
+                    price: validated.eventType === "FREE" ? 0 : validated.price,
+                    availableSeats: validated.seats,
+                    category: validated.category,
+                    location: validated.location,
+                    organizerId,
+                },
             });
-            if (validated.imageUrl) {
-                yield tx.image.create({
-                    data: { url: validated.imageUrl, eventId: created.id },
+            // Save images
+            if ((_a = validated.imageUrls) === null || _a === void 0 ? void 0 : _a.length) {
+                yield tx.image.createMany({
+                    data: validated.imageUrls.map((url) => ({
+                        url,
+                        eventId: created.id,
+                    })),
                 });
             }
-            if ((_a = validated.ticketTypes) === null || _a === void 0 ? void 0 : _a.length) {
+            // Save tickets
+            if (validated.ticketTypes.length) {
                 yield tx.ticket.createMany({
-                    data: validated.ticketTypes.map((ticket) => {
-                        var _a;
-                        return ({
-                            eventId: created.id,
-                            type: ticket.type,
-                            price: ticket.price,
-                            quota: ticket.quota,
-                            quantity: (_a = ticket.quantity) !== null && _a !== void 0 ? _a : ticket.quota,
-                        });
-                    }),
+                    data: validated.ticketTypes.map((t) => ({
+                        eventId: created.id,
+                        type: t.type,
+                        price: t.price,
+                        quantity: t.quantity,
+                    })),
                 });
             }
             return created;
@@ -120,7 +136,6 @@ const createEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.createEvent = createEvent;
-// === Get Events with Filters & Pagination ===
 const getEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { search, category, location, minPrice, maxPrice, startDate, endDate, sortBy, sortOrder = "asc", page = "1", limit = "10", } = req.query;
@@ -166,6 +181,7 @@ const getEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                         select: { id: true, first_name: true, last_name: true },
                     },
                     tickets: true,
+                    images: true,
                     promotions: {
                         where: {
                             startDate: { lte: new Date() },
@@ -196,7 +212,6 @@ const getEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.getEvents = getEvents;
-// === Get Event by ID ===
 const getEventById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const id = Number(req.params.id);
@@ -205,6 +220,7 @@ const getEventById = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             include: {
                 organizer: { select: { id: true, first_name: true, last_name: true } },
                 tickets: true,
+                images: true,
                 promotions: true,
                 reviews: {
                     include: {
@@ -235,7 +251,6 @@ const getEventById = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     }
 });
 exports.getEventById = getEventById;
-// === Update Event ===
 const updateEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
@@ -248,12 +263,55 @@ const updateEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 .json({ status: "error", message: "Event not found" });
         if (event.organizerId !== organizerId)
             return res.status(403).json({ status: "error", message: "Forbidden" });
-        const validated = exports.updateEventSchema.parse(req.body);
-        const updateData = Object.assign(Object.assign(Object.assign({}, validated), (validated.startDate && { startDate: new Date(validated.startDate) })), (validated.endDate && { endDate: new Date(validated.endDate) }));
-        const updated = yield prisma_1.default.event.update({
-            where: { id },
-            data: updateData,
-        });
+        // Parse ticketTypes jika FormData
+        let ticketTypes = req.body.ticketTypes;
+        if (typeof ticketTypes === "string")
+            ticketTypes = JSON.parse(ticketTypes);
+        const dataToValidate = Object.assign(Object.assign({}, req.body), { ticketTypes, price: Number(req.body.price), seats: Number(req.body.seats) });
+        const validated = exports.updateEventSchema.parse(dataToValidate);
+        // Update event data
+        const updateData = {
+            title: validated.name,
+            description: validated.description,
+            startDate: validated.startDate
+                ? new Date(validated.startDate)
+                : undefined,
+            endDate: validated.endDate ? new Date(validated.endDate) : undefined,
+            price: validated.eventType === "FREE" ? 0 : validated.price,
+            availableSeats: validated.seats,
+            category: validated.category,
+            location: validated.location,
+        };
+        const updated = yield prisma_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+            var _a, _b;
+            const eventUpdate = yield tx.event.update({
+                where: { id },
+                data: updateData,
+            });
+            // Handle image update
+            if ((_a = validated.imageUrls) === null || _a === void 0 ? void 0 : _a.length) {
+                yield tx.image.deleteMany({ where: { eventId: id } }); // Remove old
+                yield tx.image.createMany({
+                    data: validated.imageUrls.map((url) => ({
+                        url,
+                        eventId: id,
+                    })),
+                });
+            }
+            // Handle ticket update (replace all for simplicity)
+            if ((_b = validated.ticketTypes) === null || _b === void 0 ? void 0 : _b.length) {
+                yield tx.ticket.deleteMany({ where: { eventId: id } });
+                yield tx.ticket.createMany({
+                    data: validated.ticketTypes.map((t) => ({
+                        eventId: id,
+                        type: t.type,
+                        price: t.price,
+                        quantity: t.quantity,
+                    })),
+                });
+            }
+            return eventUpdate;
+        }));
         res.status(200).json({
             status: "success",
             message: "Event updated",
@@ -266,7 +324,6 @@ const updateEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.updateEvent = updateEvent;
-// === Delete Event ===
 const deleteEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
@@ -287,7 +344,6 @@ const deleteEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.deleteEvent = deleteEvent;
-// === Get Events by Organizer ===
 const getEventsByOrganizer = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
@@ -295,6 +351,7 @@ const getEventsByOrganizer = (req, res) => __awaiter(void 0, void 0, void 0, fun
         const events = yield prisma_1.default.event.findMany({
             where: { organizerId },
             orderBy: { createdAt: "desc" },
+            include: { images: true, tickets: true },
         });
         res.status(200).json({ status: "success", data: events });
     }
@@ -303,7 +360,6 @@ const getEventsByOrganizer = (req, res) => __awaiter(void 0, void 0, void 0, fun
     }
 });
 exports.getEventsByOrganizer = getEventsByOrganizer;
-// === Get Attendees by Event ===
 const getEventAttendees = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {

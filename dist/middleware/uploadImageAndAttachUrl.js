@@ -13,9 +13,18 @@ exports.uploadImageAndAttachUrl = void 0;
 const cloudinary_service_1 = require("../services/cloudinary.service");
 const uploadImageAndAttachUrl = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        if (req.file) {
+        req.body.imageUrls = [];
+        // multi image support
+        if (req.files && Array.isArray(req.files)) {
+            for (const file of req.files) {
+                const imageUrl = yield (0, cloudinary_service_1.uploadToCloudinary)(file);
+                req.body.imageUrls.push(imageUrl);
+            }
+        }
+        else if (req.file) {
+            // fallback single image
             const imageUrl = yield (0, cloudinary_service_1.uploadToCloudinary)(req.file);
-            req.body.imageUrl = imageUrl;
+            req.body.imageUrls = [imageUrl];
         }
         next();
     }
