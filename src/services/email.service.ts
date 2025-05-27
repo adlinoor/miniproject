@@ -24,10 +24,12 @@ export const sendEmail = async (to: string, subject: string, html: string) => {
 
 // Kirim email verifikasi
 export const sendVerificationEmail = async (to: string) => {
-  const filePath = path.join(__dirname, "../templates/register-template.hbs");
+  const filePath = path.resolve("src/templates/register-template.hbs");
+  if (!fs.existsSync(filePath)) {
+    throw new Error("Email template tidak ditemukan di path: " + filePath);
+  }
   const source = fs.readFileSync(filePath, "utf-8").toString();
   const template = handlebars.compile(source);
-  // Link ke FE/BE endpoint verifikasi (bisa email sebagai param, atau id + token jika mau aman)
   const verify_url = `${
     process.env.FRONTEND_URL
   }/verify-email/${encodeURIComponent(to)}`;

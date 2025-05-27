@@ -5,8 +5,7 @@
   "scripts": {
     "start": "npm run build && node dist/server.js",
     "dev": "nodemon",
-    "build": "tsc && npm run copy-templates",
-    "copy-templates": "cpx \"src/templates/**/*\" dist/templates",
+    "build": "tsc",
     "migrate": "prisma migrate dev",
     "postinstall": "prisma generate",
     "test": "vitest"

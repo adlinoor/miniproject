@@ -37,10 +37,12 @@ const sendEmail = (to, subject, html) => __awaiter(void 0, void 0, void 0, funct
 exports.sendEmail = sendEmail;
 // Kirim email verifikasi
 const sendVerificationEmail = (to) => __awaiter(void 0, void 0, void 0, function* () {
-    const filePath = path_1.default.join(__dirname, "../templates/register-template.hbs");
+    const filePath = path_1.default.resolve("src/templates/register-template.hbs");
+    if (!fs_1.default.existsSync(filePath)) {
+        throw new Error("Email template tidak ditemukan di path: " + filePath);
+    }
     const source = fs_1.default.readFileSync(filePath, "utf-8").toString();
     const template = handlebars_1.default.compile(source);
-    // Link ke FE/BE endpoint verifikasi (bisa email sebagai param, atau id + token jika mau aman)
     const verify_url = `${process.env.FRONTEND_URL}/verify-email/${encodeURIComponent(to)}`;
     const html = template({ email: to, verify_url });
     yield (0, exports.sendEmail)(to, "ARevents: Verify Your Account", html);
